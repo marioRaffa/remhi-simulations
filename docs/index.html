@@ -147,7 +147,7 @@ tr:hover td{background:#fafbff}
         <thead><tr>
           <th>#</th><th>Project</th><th>Experiment</th><th>Domain</th>
           <th>Period</th><th>RCM</th><th>IC/LBC</th><th>Status</th>
-          <th>Supercomputer</th><th>Cores</th><th>Size 1m [GB]</th><th>Actions</th>
+          <th>Supercomputer</th><th>Cores</th><th>Size 1m [GB]</th><th>📅 Deadline</th><th>Actions</th>
         </tr></thead>
         <tbody id="db-body"><tr><td colspan="12" class="loading">Loading…</td></tr></tbody>
       </table>
@@ -210,6 +210,20 @@ tr:hover td{background:#fafbff}
       <div class="field" style="margin-bottom:4px"><label>Notes</label>
         <textarea id="a-notes" rows="2" style="width:100%"></textarea></div>
 
+      <div class="form-grid" style="margin-top:14px">
+        <div class="field">
+          <label>📅 Delivery deadline</label>
+          <input type="date" id="a-deadline" placeholder="YYYY-MM-DD">
+          <div style="font-size:10px;color:#888;margin-top:3px">Date by which output data must be delivered</div>
+        </div>
+        <div class="field" style="grid-column:span 2">
+          <label>🗺️ Domain map URL</label>
+          <input type="text" id="a-mapurl" placeholder="https://… (link to domain image)">
+          <div style="font-size:10px;color:#888;margin-top:3px">Link to a domain map image (optional)</div>
+          <div id="map-preview" style="margin-top:8px"></div>
+        </div>
+      </div>
+
       <div class="btn-row">
         <button class="btn-primary" id="save-btn" onclick="saveSimulation()">💾 Save</button>
         <button class="btn-cancel" onclick="cancelForm()">Cancel</button>
@@ -256,13 +270,13 @@ async function ghDelete(path,sha,msg){
 async function loadData(){
   showError('');
   document.getElementById('sim-count').textContent='Loading…';
-  document.getElementById('db-body').innerHTML='<tr><td colspan="12" class="loading">Loading…</td></tr>';
+  document.getElementById('db-body').innerHTML='<tr><td colspan="12" class="loading">Loading simulations…</td></tr>';
   const saved=localStorage.getItem('gh_token');
   if(saved) document.getElementById('gh-token').value=saved;
   try{
     const ld=await ghGet(`contents/lists.yaml?ref=${BRANCH}`);
     lists=jsyaml.load(atob(ld.content.replace(/\n/g,'')));
-    const files=(await ghGet(`contents/simulations?ref=${BRANCH}`)).filter(f=>f.name.endsWith('.yaml'));
+    const files=(await ghGet(`contents/simulations?ref=${BRANCH}`)).filter(f=>f.name.endsWith('.yaml')&&f.name!=='.gitkeep');
     allSims=await Promise.all(files.map(async f=>{
       const d=await ghGet(`contents/simulations/${f.name}?ref=${BRANCH}`);
       const s=jsyaml.load(atob(d.content.replace(/\n/g,'')));
@@ -365,7 +379,12 @@ function renderTable(sims){
       <td>${c.supercomputer||''}</td>
       <td style="text-align:right">${c.cores||''}</td>
       <td style="text-align:right">${c.size_1month_gb||''}</td>
+      <td style="color:#666;font-size:11px;white-space:nowrap">${s.delivery_deadline
+        ? `<span style="background:#FFF2CC;color:#BF8F00;padding:2px 7px;border-radius:10px;font-weight:600">${s.delivery_deadline}</span>`
+        : ''}</td>
       <td style="white-space:nowrap">
+        ${s.domain_map_url?`<a href="${s.domain_map_url}" target="_blank" title="View domain map"
+          style="font-size:13px;text-decoration:none;margin-right:4px">🗺️</a>`:''}
         <button class="action-btn btn-edit" onclick='openEdit("${s._file}","${s._sha}")'>✏️ Edit</button>
         <button class="action-btn btn-del"  onclick='deleteSim("${s._file}","${s._sha}","${s.id}")'>🗑️</button>
       </td></tr>`;
@@ -411,6 +430,9 @@ function openAddForm(el){
   setVal('a-spinup','');setVal('a-start','');setVal('a-end','');
   setVal('a-cores','');setVal('a-rt','');setVal('a-size','');
   setVal('a-res','');
+  setVal('a-deadline','');
+  setVal('a-mapurl','');
+  document.getElementById('map-preview').innerHTML='';
   document.getElementById('form-title').textContent='Add simulation';
   document.getElementById('form-badge').textContent='NEW';
   document.getElementById('form-badge').className='mode-badge mode-add';
@@ -437,6 +459,14 @@ function openEdit(filename,sha){
   setVal('a-sc',c.supercomputer);
   setVal('a-cores',c.cores);setVal('a-rt',c.run_time_1yr_h);setVal('a-size',c.size_1month_gb);
   setVal('a-path',sim.work_path);setVal('a-notes',sim.notes);
+  setVal('a-deadline',sim.delivery_deadline||'');
+  setVal('a-mapurl',sim.domain_map_url||'');
+  // Trigger map preview
+  const mapPrev=document.getElementById('map-preview');
+  if(sim.domain_map_url){
+    mapPrev.innerHTML=`<img src="${sim.domain_map_url}" alt="Domain map"
+      style="max-width:100%;max-height:180px;border-radius:8px;border:1px solid #e5e7eb;margin-top:4px">`;
+  } else { mapPrev.innerHTML=''; }
   document.getElementById('form-title').textContent='Edit simulation #'+sim.id;
   document.getElementById('form-badge').textContent='EDIT';
   document.getElementById('form-badge').className='mode-badge mode-edit';
@@ -459,6 +489,19 @@ async function saveSimulation(){
     document.getElementById('form-msg').innerHTML='<div class="error">⚠️ GitHub token required. Enter it in the sidebar.</div>';
     return;
   }
+  // Validate required fields
+  const required=[
+    ['a-project','Project'],['a-experiment','Experiment'],['a-domain','Domain'],
+    ['a-status','Status'],['a-sc','Supercomputer']
+  ];
+  for(const [id,label] of required){
+    const val=document.getElementById(id).value;
+    if(!val||val===''){
+      document.getElementById('form-msg').innerHTML=
+        `<div class="error">⚠️ Please fill in the required field: <b>${label}</b></div>`;
+      return;
+    }
+  }
   const btn=document.getElementById('save-btn');
   btn.disabled=true; btn.textContent='Saving…';
   const isEdit=!!editingFile;
@@ -466,7 +509,8 @@ async function saveSimulation(){
   const exp=document.getElementById('a-experiment').value;
   const proj=document.getElementById('a-project').value;
   const existing=isEdit?allSims.find(s=>s._file===editingFile):null;
-  const nextId=isEdit?String(existing.id):String(allSims.length+1).padStart(3,'0');
+  const maxId=allSims.reduce((m,s)=>Math.max(m,parseInt(s.id)||0),0);
+  const nextId=isEdit?String(existing.id):String(maxId+1).padStart(3,'0');
   const sim={
     id:nextId,project:proj,experiment:exp,
     domain:document.getElementById('a-domain').value,
@@ -485,6 +529,8 @@ async function saveSimulation(){
              size_1month_gb:parseFloat(document.getElementById('a-size').value)},
     work_path:document.getElementById('a-path').value,
     notes:document.getElementById('a-notes').value,
+    delivery_deadline:document.getElementById('a-deadline').value||null,
+    domain_map_url:document.getElementById('a-mapurl').value||null,
     metadata:{created_by:existing?.metadata?.created_by||'dashboard',
               created_at:existing?.metadata?.created_at||today,updated_at:today}
   };
@@ -533,6 +579,21 @@ function showError(msg){
 }
 
 loadData();
+
+// Map preview
+document.addEventListener('input', function(e){
+  if(e.target.id==='a-mapurl'){
+    const url=e.target.value.trim();
+    const prev=document.getElementById('map-preview');
+    if(url){
+      prev.innerHTML=`<img src="${url}" alt="Domain map"
+        style="max-width:100%;max-height:180px;border-radius:8px;border:1px solid #e5e7eb;margin-top:4px"
+        onerror="this.style.display='none';prev.innerHTML='<span style=color:#c00;font-size:11px>Image not accessible</span>'">`;
+    } else {
+      prev.innerHTML='';
+    }
+  }
+});
 </script>
 </body>
 </html>

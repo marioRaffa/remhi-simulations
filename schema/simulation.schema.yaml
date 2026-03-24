@@ -1,58 +1,55 @@
 required:
-  - id
-  - project
-  - experiment
-  - domain
-  - spatial_resolution
-  - period
-  - rcm_model
-  - ic_lbc
-  - status
-  - compute
-
+- id
+- project
+- experiment
+- domain
+- spatial_resolution
+- period
+- rcm_model
+- ic_lbc
+- status
+- compute
 allowed_status:
-  - Completed
-  - Ongoing
-  - Planned
-  - NOT Planned
-  - Paused
-  - Failed
-
+- Completed
+- Ongoing
+- Planned
+- NOT Planned
+- Paused
+- Failed
 allowed_experiments:
-  - Evaluation
-  - Historical
-  - SSP1-2.6
-  - SSP2-4.5
-  - SSP3-7.0
-  - SSP5-8.5
-
+- Evaluation
+- Historical
+- SSP1-2.6
+- SSP2-4.5
+- SSP3-7.0
+- SSP5-8.5
 allowed_supercomputers:
-  - Cassandra
-  - Juno
-  - Other Cluster
-
+- Cassandra
+- Juno
+- Other Cluster
 allowed_projects:
-  - FUTURA - CORDEX CORE
-  - EURO-CORDEX
-
+- FUTURA - CORDEX CORE
+- EURO-CORDEX
 allowed_domains:
-  - EUR-CORDEX
-  - AFR-CORDEX
-  - NAM-CORDEX
-  - SAM-CORDEX
-  - CAM-CORDEX
-  - MED-CORDEX
-  - MNA-CORDEX
-  - WAS-CORDEX
-  - EAS-CORDEX
-  - SEA-CORDEX
-  - CAS-CORDEX
-  - AUS-CORDEX
-  - ARC-CORDEX
-  - ANT-CORDEX
-
+- EUR-CORDEX
+- AFR-CORDEX
+- NAM-CORDEX
+- SAM-CORDEX
+- CAM-CORDEX
+- MED-CORDEX
+- MNA-CORDEX
+- WAS-CORDEX
+- EAS-CORDEX
+- SEA-CORDEX
+- CAS-CORDEX
+- AUS-CORDEX
+- ARC-CORDEX
+- ANT-CORDEX
 allowed_rcm:
-  - CCLM
-  - ICLM
-
-# ic_lbc validated against lists.yaml ic_lbc_reanalysis + ic_lbc_gcm
+- CCLM
+- ICLM
+optional_fields:
+- delivery_deadline
+- domain_map_url
+- work_path
+- notes

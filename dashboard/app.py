@@ -141,7 +141,9 @@ def sidebar(sims):
     sel_sc    = filt("Supercomputer", "supercomputer")
     sel_dom   = filt("Domain",        "domain")
     sel_rcm   = filt("RCM Model",     "rcm_model")
-    sel_lbc   = filt("IC/LBC",        "ic_lbc")
+    # Sidebar IC/LBC: merge both reanalysis + GCM for filtering
+    all_lbc = ["All"] + LISTS.get("ic_lbc_reanalysis",[]) + LISTS.get("ic_lbc_gcm",[])
+    sel_lbc = st.sidebar.selectbox("IC/LBC", all_lbc)
 
     st.sidebar.markdown("---")
     if st.sidebar.button("🔄 Refresh"):
@@ -256,6 +258,14 @@ def simulation_table(sims):
                      "IC/LBC":        st.column_config.TextColumn(width="small"),
                  })
 
+# ── IC/LBC helper ────────────────────────────────────────────────────────────
+def get_lbc_list(experiment):
+    """Return reanalysis list for Evalution, GCM list for everything else."""
+    if experiment == "Evalution":
+        return LISTS.get("ic_lbc_reanalysis", ["ERA5"])
+    else:
+        return LISTS.get("ic_lbc_gcm", ["EC-Earth3"])
+
 # ── Edit panel ────────────────────────────────────────────────────────────────
 def edit_panel(sims):
     st.markdown("### ✏️ Edit simulation")
@@ -286,8 +296,10 @@ def edit_panel(sims):
             new_end   = st.number_input("End",     value=int(p.get("end")     or 0), step=1)
             new_rcm   = st.selectbox("RCM Model",  LISTS["rcm_model"],
                 index=LISTS["rcm_model"].index(sim.get("rcm_model","")) if sim.get("rcm_model") in LISTS["rcm_model"] else 0)
-            new_lbc   = st.selectbox("IC/LBC",     LISTS["ic_lbc"],
-                index=LISTS["ic_lbc"].index(sim.get("ic_lbc","")) if sim.get("ic_lbc") in LISTS["ic_lbc"] else 0)
+            _lbc_opts = get_lbc_list(sim.get("experiment",""))
+            _lbc_label = "IC/LBC — Reanalysis" if sim.get("experiment") == "Evalution" else "IC/LBC — CMIP6 GCM"
+            new_lbc = st.selectbox(_lbc_label, _lbc_opts,
+                index=_lbc_opts.index(sim.get("ic_lbc","")) if sim.get("ic_lbc") in _lbc_opts else 0)
 
         with c3:
             cmp = sim.get("compute", {})
@@ -330,11 +342,17 @@ def add_panel(sims):
     st.markdown("### ➕ Add new simulation")
     next_id = str(len(sims) + 1).zfill(3)
 
+    # Experiment outside form so IC/LBC list updates reactively
+    c0a, c0b, c0c = st.columns(3)
+    with c0a:
+        exp = st.selectbox("Experiment", LISTS["experiment"], key="add_exp")
+    lbc_opts = get_lbc_list(exp)
+    lbc_label = "IC/LBC — Reanalysis" if exp == "Evalution" else "IC/LBC — CMIP6 GCM"
+
     with st.form("add_form"):
         c1, c2, c3 = st.columns(3)
         with c1:
             proj  = st.selectbox("Project",     LISTS["project"])
-            exp   = st.selectbox("Experiment",  LISTS["experiment"])
             dom   = st.selectbox("Domain",      LISTS["domain"])
             res   = st.text_input("Spatial resolution", "0.0275° - 3 km")
         with c2:
@@ -342,7 +360,7 @@ def add_panel(sims):
             start = st.number_input("Start",   value=2000, step=1)
             end   = st.number_input("End",     value=2009, step=1)
             rcm   = st.selectbox("RCM Model",  LISTS["rcm_model"])
-            lbc   = st.selectbox("IC/LBC",     LISTS["ic_lbc"])
+            lbc   = st.selectbox(lbc_label,    lbc_opts)
         with c3:
             stat  = st.selectbox("Status",      LISTS["status"])
             sc    = st.selectbox("Supercomputer", LISTS["supercomputer"])

@@ -28,51 +28,64 @@ project:
   - EURO-CORDEX
 
 domain:
-  # Europe
-  - EUR-11
-  - EUR-44
-  # Africa
-  - AFR-22
-  - AFR-44
-  # North America
-  - NAM-22
-  - NAM-44
-  # South America
-  - SAM-22
-  - SAM-44
-  # Central America
-  - CAM-22
-  - CAM-44
-  # Mediterranean
-  - MED-11
-  - MED-44
-  # Middle East & North Africa
-  - MNA-22
-  - MNA-44
-  # West Asia
-  - WAS-22
-  - WAS-44
-  # East Asia
-  - EAS-22
-  - EAS-44
-  # Southeast Asia
-  - SEA-22
-  - SEA-44
-  # Central Asia
-  - CAS-22
-  - CAS-44
-  # Australasia
-  - AUS-22
-  - AUS-44
-  # Arctic
-  - ARC-44
-  # Antarctica
-  - ANT-44
+  - EUR-CORDEX
+  - AFR-CORDEX
+  - NAM-CORDEX
+  - SAM-CORDEX
+  - CAM-CORDEX
+  - MED-CORDEX
+  - MNA-CORDEX
+  - WAS-CORDEX
+  - EAS-CORDEX
+  - SEA-CORDEX
+  - CAS-CORDEX
+  - AUS-CORDEX
+  - ARC-CORDEX
+  - ANT-CORDEX
 
 rcm_model:
   - CCLM
   - ICLM
 
-ic_lbc:
+# IC/LBC for Evalution experiment → reanalysis only
+ic_lbc_reanalysis:
   - ERA5
-  - GCM
+  - ERA-Interim
+  - MERRA-2
+  - JRA-55
+  - CFSR
+
+# IC/LBC for Historical + SSP experiments → CMIP6 GCMs only
+ic_lbc_gcm:
+  - ACCESS-CM2
+  - ACCESS-ESM1-5
+  - BCC-CSM2-MR
+  - CanESM5
+  - CMCC-CM2-SR5
+  - CMCC-ESM2
+  - CNRM-CM6-1
+  - CNRM-CM6-1-HR
+  - CNRM-ESM2-1
+  - EC-Earth3
+  - EC-Earth3-CC
+  - EC-Earth3-Veg
+  - EC-Earth3-Veg-LR
+  - FGOALS-g3
+  - GFDL-CM4
+  - GFDL-ESM4
+  - HadGEM3-GC31-LL
+  - HadGEM3-GC31-MM
+  - INM-CM4-8
+  - INM-CM5-0
+  - IPSL-CM6A-LR
+  - KACE-1-0-G
+  - KIOST-ESM
+  - MIROC-ES2L
+  - MIROC6
+  - MPI-ESM1-2-HR
+  - MPI-ESM1-2-LR
+  - MRI-ESM2-0
+  - NESM3
+  - NorESM2-LM
+  - NorESM2-MM
+  - UKESM1-0-LL

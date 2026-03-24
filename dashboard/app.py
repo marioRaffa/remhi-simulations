@@ -20,18 +20,9 @@ USERS = {
 LISTS_FILE = Path(__file__).parent.parent / "lists.yaml"
 
 def load_lists():
+    # No cache — always reads fresh from file so GitHub edits apply immediately
     with open(LISTS_FILE) as f:
         return yaml.safe_load(f)
-
-LISTS_PLACEHOLDER = {
-    "experiment":    ["Evalution", "Historical", "SSP1-2.6", "SSP2-4.5", "SSP3-7.0", "SSP5-8.5"],
-    "status":        ["Completed", "Ongoing", "Planned", "NOT Planned", "Paused", "Failed"],
-    "supercomputer": ["Cassandra", "Juno", "Other Cluster"],
-    "project":       ["FUTURA - CORDEX CORE", "EURO-CORDEX"],
-    "domain":        ["Africa CORDEX", "ALPAERA"],
-    "rcm_model":     ["CCLM", "ICLM"],
-    "ic_lbc":        ["ERA5", "GCM"],
-}
 
 STATUS_COLORS = {
     "Completed":   "#70AD47", "Ongoing":     "#4472C4",
@@ -49,8 +40,17 @@ st.set_page_config(page_title="REMHI Simulations", page_icon="🌍",
 
 st.markdown("""<style>
 [data-testid="stSidebar"]{background:#1F3864}
-[data-testid="stSidebar"] *{color:#fff!important}
-[data-testid="stSidebar"] select{background:rgba(255,255,255,.1)!important;color:#fff!important}
+[data-testid="stSidebar"] label,
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] span,
+[data-testid="stSidebar"] div{color:#fff!important}
+[data-testid="stSidebar"] .stSelectbox > div > div{
+    background:rgba(255,255,255,0.12)!important;
+    color:#fff!important;
+    border-color:rgba(255,255,255,0.3)!important}
+[data-testid="stSidebar"] .stSelectbox svg{fill:#fff!important}
+.stSelectbox [data-baseweb="select"] span{color:var(--text-color)!important}
+.stSelectbox [data-baseweb="popover"] li{color:#000!important;background:#fff!important}
 </style>""", unsafe_allow_html=True)
 
 # ── Auth ──────────────────────────────────────────────────────────────────────

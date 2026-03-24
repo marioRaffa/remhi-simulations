@@ -1,10 +1,6 @@
 # ══════════════════════════════════════════════════════════════════
 # REMHI Simulations — Dropdown Lists
 # ══════════════════════════════════════════════════════════════════
-# This is the single place to manage all dropdown options.
-# Edit this file directly on GitHub to add, remove, or rename values.
-# Changes take effect immediately in the dashboard and validator.
-# ══════════════════════════════════════════════════════════════════
 
 experiment:
   - Evalution
@@ -32,20 +28,46 @@ project:
   - EURO-CORDEX
 
 domain:
-  - EUR-CORDEX
-  - AFR-CORDEX
-  - NAM-CORDEX
-  - SAM-CORDEX
-  - CAM-CORDEX
-  - MED-CORDEX
-  - MNA-CORDEX
-  - WAS-CORDEX
-  - EAS-CORDEX
-  - SEA-CORDEX
-  - CAS-CORDEX
-  - AUS-CORDEX
-  - ARC-CORDEX
-  - ANT-CORDEX
+  # Europe
+  - EUR-11
+  - EUR-44
+  # Africa
+  - AFR-22
+  - AFR-44
+  # North America
+  - NAM-22
+  - NAM-44
+  # South America
+  - SAM-22
+  - SAM-44
+  # Central America
+  - CAM-22
+  - CAM-44
+  # Mediterranean
+  - MED-11
+  - MED-44
+  # Middle East & North Africa
+  - MNA-22
+  - MNA-44
+  # West Asia
+  - WAS-22
+  - WAS-44
+  # East Asia
+  - EAS-22
+  - EAS-44
+  # Southeast Asia
+  - SEA-22
+  - SEA-44
+  # Central Asia
+  - CAS-22
+  - CAS-44
+  # Australasia
+  - AUS-22
+  - AUS-44
+  # Arctic
+  - ARC-44
+  # Antarctica
+  - ANT-44
 
 rcm_model:
   - CCLM

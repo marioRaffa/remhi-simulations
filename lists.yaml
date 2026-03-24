@@ -17,10 +17,10 @@ status:
   - Paused
   - Failed
 
-supercomputer:
-  - Cassandra
-  - Juno
-  - Other Cluster
+HPC / Cluster:
+  - CMCC / Cassandra
+  - CMCC/ Juno
+  - CINECA / Leonardo
 
 project:
   - FUTURA - CORDEX CORE

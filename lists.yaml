@@ -32,8 +32,20 @@ project:
   - EURO-CORDEX
 
 domain:
-  - Africa CORDEX
-  - ALPAERA
+  - EUR-CORDEX
+  - AFR-CORDEX
+  - NAM-CORDEX
+  - SAM-CORDEX
+  - CAM-CORDEX
+  - MED-CORDEX
+  - MNA-CORDEX
+  - WAS-CORDEX
+  - EAS-CORDEX
+  - SEA-CORDEX
+  - CAS-CORDEX
+  - AUS-CORDEX
+  - ARC-CORDEX
+  - ANT-CORDEX
 
 rcm_model:
   - CCLM

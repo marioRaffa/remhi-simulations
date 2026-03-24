@@ -147,7 +147,7 @@ tr:hover td{background:#fafbff}
         <thead><tr>
           <th>#</th><th>Project</th><th>Experiment</th><th>Domain</th>
           <th>Period</th><th>RCM</th><th>IC/LBC</th><th>Status</th>
-          <th>Supercomputer</th><th>Cores</th><th>Size [GB]</th><th>Actions</th>
+          <th>Supercomputer</th><th>Cores</th><th>Size 1m [GB]</th><th>Actions</th>
         </tr></thead>
         <tbody id="db-body"><tr><td colspan="12" class="loading">Loading…</td></tr></tbody>
       </table>
@@ -202,7 +202,7 @@ tr:hover td{background:#fafbff}
       <div class="form-grid">
         <div class="field"><label>Spatial resolution</label>
           <input type="text" id="a-res" value="0.0275 deg - 3 km"></div>
-        <div class="field"><label>Size 1yr [GB]</label>
+        <div class="field"><label>Size 1month [GB]</label>
           <input type="number" id="a-size" value="0"></div>
         <div class="field"><label>Work path</label>
           <input type="text" id="a-path" placeholder="/work/…"></div>
@@ -364,7 +364,7 @@ function renderTable(sims){
       <td><span class="badge" style="background:${bg};color:${fg}">${s.status||''}</span></td>
       <td>${c.supercomputer||''}</td>
       <td style="text-align:right">${c.cores||''}</td>
-      <td style="text-align:right">${c.size_1yr_gb||''}</td>
+      <td style="text-align:right">${c.size_1month_gb||''}</td>
       <td style="white-space:nowrap">
         <button class="action-btn btn-edit" onclick='openEdit("${s._file}","${s._sha}")'>✏️ Edit</button>
         <button class="action-btn btn-del"  onclick='deleteSim("${s._file}","${s._sha}","${s.id}")'>🗑️</button>
@@ -376,6 +376,10 @@ function populateFormDropdowns(){
   const map={'a-project':'project','a-experiment':'experiment','a-domain':'domain','a-rcm':'rcm_model','a-status':'status','a-sc':'supercomputer'};
   for(const [id,k] of Object.entries(map)){
     const sel=document.getElementById(id); sel.innerHTML='';
+    // Empty placeholder first
+    const placeholder=document.createElement('option');
+    placeholder.value=''; placeholder.textContent='—';
+    sel.appendChild(placeholder);
     (lists[k]||[]).forEach(v=>{const o=document.createElement('option');o.value=o.textContent=v;sel.appendChild(o);});
   }
   updateLbcList();
@@ -394,6 +398,7 @@ function updateLbcList(){
   sel.style.border=`2px solid ${isEval?'#1F6B75':'#4472C4'}`;
   hint.textContent=isEval?'Reanalysis only (Evaluation run)':'CMIP6 GCM forcing (Historical / SSP)';
   const cur=sel.value; sel.innerHTML='';
+  const ph=document.createElement('option');ph.value='';ph.textContent='—';sel.appendChild(ph);
   opts.forEach(v=>{const o=document.createElement('option');o.value=o.textContent=v;if(v===cur)o.selected=true;sel.appendChild(o);});
 }
 
@@ -430,7 +435,7 @@ function openEdit(filename,sha){
   setVal('a-rcm',sim.rcm_model);
   setVal('a-status',sim.status);
   setVal('a-sc',c.supercomputer);
-  setVal('a-cores',c.cores);setVal('a-rt',c.run_time_1yr_h);setVal('a-size',c.size_1yr_gb);
+  setVal('a-cores',c.cores);setVal('a-rt',c.run_time_1yr_h);setVal('a-size',c.size_1month_gb);
   setVal('a-path',sim.work_path);setVal('a-notes',sim.notes);
   document.getElementById('form-title').textContent='Edit simulation #'+sim.id;
   document.getElementById('form-badge').textContent='EDIT';
@@ -477,7 +482,7 @@ async function saveSimulation(){
              timestep_s:25,relaxation_zone_pts:23,
              run_time_1yr_h:parseFloat(document.getElementById('a-rt').value),
              output_frequency:'1 hr - 3 hr - 6 hr',
-             size_1yr_gb:parseFloat(document.getElementById('a-size').value)},
+             size_1month_gb:parseFloat(document.getElementById('a-size').value)},
     work_path:document.getElementById('a-path').value,
     notes:document.getElementById('a-notes').value,
     metadata:{created_by:existing?.metadata?.created_by||'dashboard',

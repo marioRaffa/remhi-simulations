@@ -2,7 +2,7 @@ id: '002'
 project: FUTURA - CORDEX CORE
 experiment: Historical
 domain: EUR-CORDEX
-spatial_resolution: 0.0275Â° - 3 km
+spatial_resolution: "0.0275 deg - 3 km"
 period:
   spin_up: 1995
   start: 1996

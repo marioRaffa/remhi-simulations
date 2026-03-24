@@ -131,18 +131,17 @@ def sidebar(sims):
 
     st.sidebar.markdown("### 🔍 Filters")
 
-    def filt(label, key, values):
-        opts = ["All"] + sorted({s.get(key, "") for s in sims} - {""})
+    def filt(label, list_key):
+        opts = ["All"] + LISTS.get(list_key, [])
         return st.sidebar.selectbox(label, opts)
 
-    sel_proj  = filt("Project",       "project",    LISTS["project"])
-    sel_exp   = filt("Experiment",    "experiment", LISTS["experiment"])
-    sel_stat  = filt("Status",        "status",     LISTS["status"])
-    sel_sc    = st.sidebar.selectbox("Supercomputer",
-                    ["All"] + sorted({s.get("compute",{}).get("supercomputer","") for s in sims} - {""}))
-    sel_dom   = filt("Domain",        "domain",     LISTS["domain"])
-    sel_rcm   = filt("RCM Model",     "rcm_model",  LISTS["rcm_model"])
-    sel_lbc   = filt("IC/LBC",        "ic_lbc",     LISTS["ic_lbc"])
+    sel_proj  = filt("Project",       "project")
+    sel_exp   = filt("Experiment",    "experiment")
+    sel_stat  = filt("Status",        "status")
+    sel_sc    = filt("Supercomputer", "supercomputer")
+    sel_dom   = filt("Domain",        "domain")
+    sel_rcm   = filt("RCM Model",     "rcm_model")
+    sel_lbc   = filt("IC/LBC",        "ic_lbc")
 
     st.sidebar.markdown("---")
     if st.sidebar.button("🔄 Refresh"):

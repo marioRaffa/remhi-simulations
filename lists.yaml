@@ -1,0 +1,44 @@
+# ══════════════════════════════════════════════════════════════════
+# REMHI Simulations — Dropdown Lists
+# ══════════════════════════════════════════════════════════════════
+# This is the single place to manage all dropdown options.
+# Edit this file directly on GitHub to add, remove, or rename values.
+# Changes take effect immediately in the dashboard and validator.
+# ══════════════════════════════════════════════════════════════════
+
+experiment:
+  - Evalution
+  - Historical
+  - SSP1-2.6
+  - SSP2-4.5
+  - SSP3-7.0
+  - SSP5-8.5
+
+status:
+  - Completed
+  - Ongoing
+  - Planned
+  - NOT Planned
+  - Paused
+  - Failed
+
+supercomputer:
+  - Cassandra
+  - Juno
+  - Other Cluster
+
+project:
+  - FUTURA - CORDEX CORE
+  - EURO-CORDEX
+
+domain:
+  - Africa CORDEX
+  - ALPAERA
+
+rcm_model:
+  - CCLM
+  - ICLM
+
+ic_lbc:
+  - ERA5
+  - GCM

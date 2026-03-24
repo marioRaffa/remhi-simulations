@@ -1,0 +1,48 @@
+required:
+  - id
+  - project
+  - experiment
+  - domain
+  - spatial_resolution
+  - period
+  - rcm_model
+  - ic_lbc
+  - status
+  - compute
+
+allowed_status:
+  - Completed
+  - Ongoing
+  - Planned
+  - NOT Planned
+  - Paused
+  - Failed
+
+allowed_experiments:
+  - Evalution
+  - Historical
+  - SSP1-2.6
+  - SSP2-4.5
+  - SSP3-7.0
+  - SSP5-8.5
+
+allowed_supercomputers:
+  - Cassandra
+  - Juno
+  - Other Cluster
+
+allowed_projects:
+  - FUTURA - CORDEX CORE
+  - EURO-CORDEX
+
+allowed_domains:
+  - Africa CORDEX
+  - ALPAERA
+
+allowed_rcm:
+  - CCLM
+  - ICLM
+
+allowed_ic_lbc:
+  - ERA5
+  - GCM

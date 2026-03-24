@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REMHI Climate Simulations</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f6f9;color:#1a1a2e;font-size:14px}
+
+/* Layout */
+.shell{display:flex;min-height:100vh}
+.sidebar{width:220px;min-width:220px;background:#1F3864;display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100}
+.main{margin-left:220px;flex:1;padding:20px;min-height:100vh}
+
+/* Sidebar */
+.sb-title{padding:18px 16px 12px;border-bottom:1px solid rgba(255,255,255,.1)}
+.sb-title h2{color:#fff;font-size:15px;font-weight:600}
+.sb-title p{color:rgba(255,255,255,.5);font-size:11px;margin-top:3px}
+.sb-section{padding:14px 16px 4px;color:rgba(255,255,255,.4);font-size:10px;text-transform:uppercase;letter-spacing:.08em}
+.sb-filter{padding:4px 16px 10px}
+.sb-filter label{color:rgba(255,255,255,.65);font-size:11px;display:block;margin-bottom:4px}
+.sb-filter select{width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:12px;padding:5px 8px;border-radius:5px;outline:none;cursor:pointer}
+.sb-filter select option{background:#1F3864;color:#fff}
+.sb-bottom{margin-top:auto;padding:14px 16px;border-top:1px solid rgba(255,255,255,.1)}
+.sb-token{width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:11px;padding:5px 8px;border-radius:5px;outline:none;margin-top:4px}
+.sb-token::placeholder{color:rgba(255,255,255,.35)}
+.btn-sm{width:100%;margin-top:6px;padding:6px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:5px;cursor:pointer;font-size:11px}
+.btn-sm:hover{background:rgba(255,255,255,.25)}
+
+/* Topbar */
+.topbar{background:#fff;border-radius:10px;padding:14px 20px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 3px rgba(0,0,0,.07)}
+.topbar h1{font-size:18px;font-weight:600;color:#1F3864}
+.topbar span{font-size:12px;color:#888}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;margin-bottom:16px}
+.tab{padding:8px 18px;border-radius:7px;cursor:pointer;font-size:13px;color:#666;background:#fff;border:1px solid #e5e7eb;transition:all .15s}
+.tab.active{background:#1F3864;color:#fff;border-color:#1F3864}
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* KPI cards */
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px}
+.kpi{background:#fff;border-radius:10px;padding:14px 16px;border-left:4px solid;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.kpi-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.kpi-val{font-size:28px;font-weight:600}
+
+/* Charts */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.charts-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.chart-card{background:#fff;border-radius:10px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.chart-card h3{font-size:12px;font-weight:600;color:#666;margin-bottom:12px;text-transform:uppercase;letter-spacing:.04em}
+
+/* Table */
+.table-wrap{background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+table{width:100%;border-collapse:collapse}
+th{background:#f8f9fa;font-size:11px;font-weight:600;text-align:left;padding:10px 12px;color:#555;border-bottom:2px solid #e5e7eb;white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid #f0f0f0;font-size:12px;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafbff}
+.badge{display:inline-flex;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.edit-btn{color:#1F3864;text-decoration:none;font-size:11px;padding:3px 8px;border:1px solid #1F3864;border-radius:4px;white-space:nowrap}
+.edit-btn:hover{background:#1F3864;color:#fff}
+
+/* Add form */
+.form-card{background:#fff;border-radius:10px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}
+.field label{font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em}
+.field input,.field select,.field textarea{width:100%;padding:7px 10px;font-size:13px;border:1px solid #e5e7eb;border-radius:6px;outline:none;background:#fafbff;color:#1a1a2e;transition:border .15s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:#1F3864}
+.btn-primary{background:#1F3864;color:#fff;border:none;padding:10px 24px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px}
+.btn-primary:hover{background:#162d50}
+.form-section{font-size:11px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:.05em;margin:16px 0 10px;border-top:1px solid #f0f0f0;padding-top:14px}
+
+/* Loading / error */
+.loading{text-align:center;padding:60px;color:#888;font-size:14px}
+.error{background:#fff0f0;border:1px solid #fcc;border-radius:8px;padding:16px;color:#c00;font-size:13px;margin-bottom:16px}
+.success{background:#f0fff0;border:1px solid #9d9;border-radius:8px;padding:12px;color:#060;font-size:13px;margin-bottom:12px}
+.info{background:#f0f4ff;border:1px solid #c0cfe8;border-radius:8px;padding:12px;color:#1F3864;font-size:13px;margin-bottom:12px}
+</style>
+</head>
+<body>
+
+<div class="shell">
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sb-title">
+    <h2>🌍 REMHI Simulations</h2>
+    <p>CMCC — REMHI Division</p>
+  </div>
+
+  <div class="sb-section">Filters</div>
+  <div class="sb-filter"><label>Project</label>
+    <select id="f-project" onchange="applyFilters()"><option value="">All</option></select></div>
+  <div class="sb-filter"><label>Experiment</label>
+    <select id="f-experiment" onchange="applyFilters()"><option value="">All</option></select></div>
+  <div class="sb-filter"><label>Status</label>
+    <select id="f-status" onchange="applyFilters()"><option value="">All</option></select></div>
+  <div class="sb-filter"><label>Supercomputer</label>
+    <select id="f-supercomputer" onchange="applyFilters()"><option value="">All</option></select></div>
+  <div class="sb-filter"><label>Domain</label>
+    <select id="f-domain" onchange="applyFilters()"><option value="">All</option></select></div>
+  <div class="sb-filter"><label>RCM Model</label>
+    <select id="f-rcm" onchange="applyFilters()"><option value="">All</option></select></div>
+  <div class="sb-filter"><label>IC/LBC</label>
+    <select id="f-lbc" onchange="applyFilters()"><option value="">All</option></select></div>
+
+  <div class="sb-bottom">
+    <div style="color:rgba(255,255,255,.5);font-size:10px;margin-bottom:6px">GitHub Token (private repo)</div>
+    <input class="sb-token" type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxx"
+           onchange="saveToken()" value="">
+    <button class="btn-sm" onclick="loadData()">🔄 Reload data</button>
+    <div style="color:rgba(255,255,255,.3);font-size:10px;margin-top:8px" id="last-refresh"></div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div>
+      <h1>🌍 REMHI Climate Simulations</h1>
+    </div>
+    <span id="sim-count">Loading…</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('summary',this)">📊 Summary</div>
+    <div class="tab" onclick="switchTab('database',this)">📋 Database</div>
+    <div class="tab" onclick="switchTab('add',this)">➕ Add simulation</div>
+  </div>
+
+  <div id="error-box"></div>
+
+  <!-- SUMMARY TAB -->
+  <div id="tab-summary" class="tab-content active">
+    <div class="kpi-row" id="kpi-row"></div>
+    <div class="charts-row">
+      <div class="chart-card"><h3>Status distribution</h3>
+        <div style="position:relative;height:220px"><canvas id="c-status"></canvas></div></div>
+      <div class="chart-card"><h3>By project</h3>
+        <div style="position:relative;height:220px"><canvas id="c-project"></canvas></div></div>
+    </div>
+    <div class="charts-row3">
+      <div class="chart-card"><h3>By supercomputer</h3>
+        <div style="position:relative;height:190px"><canvas id="c-sc"></canvas></div></div>
+      <div class="chart-card"><h3>By experiment</h3>
+        <div style="position:relative;height:190px"><canvas id="c-exp"></canvas></div></div>
+      <div class="chart-card"><h3>By IC/LBC</h3>
+        <div style="position:relative;height:190px"><canvas id="c-lbc"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- DATABASE TAB -->
+  <div id="tab-database" class="tab-content">
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>#</th><th>Project</th><th>Experiment</th><th>Domain</th>
+          <th>Period</th><th>RCM</th><th>IC/LBC</th><th>Status</th>
+          <th>Supercomputer</th><th>Cores</th><th>Size [GB]</th><th>Edit</th>
+        </tr></thead>
+        <tbody id="db-body"><tr><td colspan="12" class="loading">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ADD TAB -->
+  <div id="tab-add" class="tab-content">
+    <div class="form-card">
+      <div id="add-msg"></div>
+      <div class="info">
+        ℹ️ Filling this form generates a YAML file ready to copy into your GitHub repo
+        (<code>simulations/</code> folder). The dashboard updates automatically after commit.
+      </div>
+
+      <div class="form-grid">
+        <div class="field"><label>Project</label>
+          <select id="a-project"></select></div>
+        <div class="field"><label>Experiment</label>
+          <select id="a-experiment" onchange="updateLbcList()"></select></div>
+        <div class="field"><label>Domain</label>
+          <select id="a-domain"></select></div>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>Spin-up year</label>
+          <input type="number" id="a-spinup" value="1999"></div>
+        <div class="field"><label>Start year</label>
+          <input type="number" id="a-start" value="2000"></div>
+        <div class="field"><label>End year</label>
+          <input type="number" id="a-end" value="2009"></div>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>RCM Model</label>
+          <select id="a-rcm"></select></div>
+        <div class="field"><label id="a-lbc-label">IC/LBC</label>
+          <select id="a-lbc"></select></div>
+        <div class="field"><label>Status</label>
+          <select id="a-status"></select></div>
+      </div>
+
+      <div class="form-section">Compute</div>
+      <div class="form-grid">
+        <div class="field"><label>Supercomputer</label>
+          <select id="a-sc"></select></div>
+        <div class="field"><label>Cores</label>
+          <input type="number" id="a-cores" value="1536"></div>
+        <div class="field"><label>Run time 1yr [h]</label>
+          <input type="number" id="a-rt" value="0" step="0.01"></div>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>Spatial resolution</label>
+          <input type="text" id="a-res" value="0.0275° - 3 km"></div>
+        <div class="field"><label>Size 1yr [GB]</label>
+          <input type="number" id="a-size" value="0"></div>
+        <div class="field"><label>Work Path</label>
+          <input type="text" id="a-path" placeholder="/work/…"></div>
+      </div>
+      <div class="field" style="margin-bottom:8px"><label>Notes</label>
+        <textarea id="a-notes" rows="2" placeholder="Optional notes…" style="width:100%"></textarea></div>
+
+      <button class="btn-primary" onclick="generateYaml()">📋 Generate YAML</button>
+
+      <div id="yaml-output" style="display:none;margin-top:16px">
+        <div class="form-section">Generated YAML — copy and save as a new file in <code>simulations/</code></div>
+        <pre id="yaml-text" style="background:#1e1e2e;color:#cdd6f4;padding:16px;border-radius:8px;
+             font-size:12px;overflow-x:auto;white-space:pre;line-height:1.6"></pre>
+        <button class="btn-primary" onclick="copyYaml()" style="margin-top:8px">📋 Copy to clipboard</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+// ── Config ────────────────────────────────────────────────────────────────────
+const OWNER  = 'marioRaffa';
+const REPO   = 'remhi-simulations';
+const BRANCH = 'main';
+
+const STATUS_COLORS = {
+  'Completed':   '#70AD47', 'Ongoing':     '#4472C4',
+  'Planned':     '#BF8F00', 'NOT Planned': '#C00000',
+  'Paused':      '#808080', 'Failed':      '#C55A11',
+};
+const STATUS_BG = {
+  'Completed':   '#E2EFDA', 'Ongoing':     '#D9E1F2',
+  'Planned':     '#FFF2CC', 'NOT Planned': '#FFDCE0',
+  'Paused':      '#F2F2F2', 'Failed':      '#FCE4D6',
+};
+
+let allSims   = [];
+let lists     = {};
+let charts    = {};
+
+// ── Token ─────────────────────────────────────────────────────────────────────
+function getToken() {
+  return localStorage.getItem('gh_token') || document.getElementById('gh-token').value || '';
+}
+function saveToken() {
+  const t = document.getElementById('gh-token').value.trim();
+  if (t) localStorage.setItem('gh_token', t);
+}
+
+// ── GitHub API ────────────────────────────────────────────────────────────────
+async function ghFetch(path) {
+  const token = getToken();
+  const headers = { 'Accept': 'application/vnd.github.v3+json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const r = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/${path}`, { headers });
+  if (!r.ok) throw new Error(`GitHub API error ${r.status}: ${await r.text()}`);
+  return r.json();
+}
+
+async function fetchFile(filePath) {
+  const data = await ghFetch(`contents/${filePath}?ref=${BRANCH}`);
+  const text = atob(data.content.replace(/\n/g,''));
+  return jsyaml.load(text);
+}
+
+// ── Load data ─────────────────────────────────────────────────────────────────
+async function loadData() {
+  showError('');
+  document.getElementById('sim-count').textContent = 'Loading…';
+  document.getElementById('db-body').innerHTML = '<tr><td colspan="12" class="loading">Loading simulations…</td></tr>';
+
+  // Restore saved token
+  const saved = localStorage.getItem('gh_token');
+  if (saved) document.getElementById('gh-token').value = saved;
+
+  try {
+    // Load lists.yaml
+    lists = await fetchFile('lists.yaml');
+
+    // Load simulation files
+    const files = await ghFetch(`contents/simulations?ref=${BRANCH}`);
+    const yamlFiles = files.filter(f => f.name.endsWith('.yaml'));
+
+    allSims = await Promise.all(yamlFiles.map(async f => {
+      const sim = await fetchFile(`simulations/${f.name}`);
+      sim._file = f.name;
+      sim._url  = `https://github.com/${OWNER}/${REPO}/edit/${BRANCH}/simulations/${f.name}`;
+      return sim;
+    }));
+
+    allSims.sort((a,b) => (a.id||'').localeCompare(b.id||''));
+
+    populateFilters();
+    populateFormDropdowns();
+    applyFilters();
+
+    document.getElementById('last-refresh').textContent =
+      'Updated: ' + new Date().toLocaleTimeString();
+
+  } catch(e) {
+    showError(`Error loading data: ${e.message}<br>
+      <small>If the repo is private, enter your GitHub token in the sidebar.<br>
+      Generate one at: github.com → Settings → Developer settings → Personal access tokens → Tokens (classic) → repo scope.</small>`);
+    document.getElementById('sim-count').textContent = 'Error';
+  }
+}
+
+// ── Filters ───────────────────────────────────────────────────────────────────
+function populateFilters() {
+  const keys = {
+    'f-project':     'project',
+    'f-experiment':  'experiment',
+    'f-status':      'status',
+    'f-domain':      'domain',
+    'f-rcm':         'rcm_model',
+  };
+  // Use lists.yaml values
+  for (const [id, listKey] of Object.entries(keys)) {
+    const sel = document.getElementById(id);
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">All</option>';
+    (lists[listKey] || []).forEach(v => {
+      const o = document.createElement('option');
+      o.value = o.textContent = v;
+      if (v === cur) o.selected = true;
+      sel.appendChild(o);
+    });
+  }
+  // Supercomputer from lists
+  const scSel = document.getElementById('f-supercomputer');
+  const curSc = scSel.value;
+  scSel.innerHTML = '<option value="">All</option>';
+  (lists['supercomputer'] || []).forEach(v => {
+    const o = document.createElement('option');
+    o.value = o.textContent = v;
+    if (v === curSc) o.selected = true;
+    scSel.appendChild(o);
+  });
+  // IC/LBC merged
+  const lbcSel = document.getElementById('f-lbc');
+  const curLbc = lbcSel.value;
+  lbcSel.innerHTML = '<option value="">All</option>';
+  [...(lists['ic_lbc_reanalysis']||[]), ...(lists['ic_lbc_gcm']||[])].forEach(v => {
+    const o = document.createElement('option');
+    o.value = o.textContent = v;
+    if (v === curLbc) o.selected = true;
+    lbcSel.appendChild(o);
+  });
+}
+
+function getFilterVal(id) {
+  return document.getElementById(id).value;
+}
+
+function applyFilters() {
+  const proj = getFilterVal('f-project');
+  const exp  = getFilterVal('f-experiment');
+  const stat = getFilterVal('f-status');
+  const sc   = getFilterVal('f-supercomputer');
+  const dom  = getFilterVal('f-domain');
+  const rcm  = getFilterVal('f-rcm');
+  const lbc  = getFilterVal('f-lbc');
+
+  const filtered = allSims.filter(s => {
+    const cmp = s.compute || {};
+    return (!proj || s.project    === proj)
+        && (!exp  || s.experiment === exp)
+        && (!stat || s.status     === stat)
+        && (!sc   || cmp.supercomputer === sc)
+        && (!dom  || s.domain     === dom)
+        && (!rcm  || s.rcm_model  === rcm)
+        && (!lbc  || s.ic_lbc     === lbc);
+  });
+
+  document.getElementById('sim-count').textContent =
+    `${filtered.length} simulation(s) of ${allSims.length} total`;
+
+  renderKPIs(filtered);
+  renderCharts(filtered);
+  renderTable(filtered);
+}
+
+// ── KPIs ──────────────────────────────────────────────────────────────────────
+function renderKPIs(sims) {
+  const cnt = (status) => sims.filter(s => s.status === status).length;
+  const kpis = [
+    ['Total',       sims.length,          '#1F3864','#D9E1F2'],
+    ['Completed',   cnt('Completed'),      '#375623','#E2EFDA'],
+    ['Ongoing',     cnt('Ongoing'),        '#1F3864','#D9E1F2'],
+    ['Planned',     cnt('Planned'),        '#BF8F00','#FFF2CC'],
+    ['NOT Planned', cnt('NOT Planned'),    '#C00000','#FFDCE0'],
+  ];
+  document.getElementById('kpi-row').innerHTML = kpis.map(([l,v,fg,bg]) => `
+    <div class="kpi" style="border-color:${fg};background:${bg}">
+      <div class="kpi-label" style="color:${fg}">${l}</div>
+      <div class="kpi-val" style="color:${fg}">${v}</div>
+    </div>`).join('');
+}
+
+// ── Charts ────────────────────────────────────────────────────────────────────
+function groupBy(sims, key) {
+  const map = {};
+  sims.forEach(s => {
+    const v = key === 'supercomputer'
+      ? (s.compute||{}).supercomputer || '?'
+      : s[key] || '?';
+    map[v] = (map[v] || 0) + 1;
+  });
+  return map;
+}
+
+function makeChart(id, type, labels, data, colors) {
+  if (charts[id]) charts[id].destroy();
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  charts[id] = new Chart(ctx, {
+    type,
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 0 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: type === 'doughnut',
+          position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } },
+      },
+      scales: type !== 'doughnut' ? {
+        x: { ticks: { font: { size: 10 } } },
+        y: { ticks: { font: { size: 10 } }, beginAtZero: true }
+      } : {},
+      cutout: type === 'doughnut' ? '55%' : undefined,
+    }
+  });
+}
+
+function renderCharts(sims) {
+  const statusGrp = groupBy(sims, 'status');
+  makeChart('c-status', 'doughnut',
+    Object.keys(statusGrp), Object.values(statusGrp),
+    Object.keys(statusGrp).map(k => STATUS_COLORS[k] || '#aaa'));
+
+  const projGrp = groupBy(sims, 'project');
+  makeChart('c-project', 'bar',
+    Object.keys(projGrp), Object.values(projGrp),
+    ['#4472C4','#70AD47','#ED7D31','#9E3FBF','#C00000']);
+
+  const scGrp = groupBy(sims, 'supercomputer');
+  makeChart('c-sc', 'bar',
+    Object.keys(scGrp), Object.values(scGrp),
+    ['#ED7D31','#4472C4','#70AD47','#9E3FBF']);
+
+  const expGrp = groupBy(sims, 'experiment');
+  makeChart('c-exp', 'bar',
+    Object.keys(expGrp), Object.values(expGrp),
+    ['#4472C4','#70AD47','#ED7D31','#9E3FBF','#C00000','#BF8F00']);
+
+  const lbcGrp = groupBy(sims, 'ic_lbc');
+  makeChart('c-lbc', 'bar',
+    Object.keys(lbcGrp), Object.values(lbcGrp),
+    ['#1F6B75','#4472C4','#70AD47','#ED7D31','#9E3FBF']);
+}
+
+// ── Table ─────────────────────────────────────────────────────────────────────
+function renderTable(sims) {
+  if (!sims.length) {
+    document.getElementById('db-body').innerHTML =
+      '<tr><td colspan="12" style="text-align:center;padding:30px;color:#aaa">No simulations match the filters</td></tr>';
+    return;
+  }
+  const bg = (s) => STATUS_BG[s.status] || '#fff';
+  const fg = (s) => STATUS_COLORS[s.status] || '#000';
+  const p  = (s) => { const pd = s.period||{}; return `${pd.start||''}/${pd.end||''}`; };
+  document.getElementById('db-body').innerHTML = sims.map((s,i) => {
+    const cmp = s.compute || {};
+    const rowBg = i%2===0 ? '#fff' : '#fafbff';
+    return `<tr style="background:${rowBg}">
+      <td><b style="color:#1F3864">${s.id||''}</b></td>
+      <td>${s.project||''}</td>
+      <td>${s.experiment||''}</td>
+      <td style="color:#666">${s.domain||''}</td>
+      <td style="color:#666">${p(s)}</td>
+      <td>${s.rcm_model||''}</td>
+      <td style="color:#555">${s.ic_lbc||''}</td>
+      <td><span class="badge" style="background:${bg(s)};color:${fg(s)}">${s.status||''}</span></td>
+      <td>${cmp.supercomputer||''}</td>
+      <td style="text-align:right">${cmp.cores||''}</td>
+      <td style="text-align:right">${cmp.size_1yr_gb||''}</td>
+      <td><a class="edit-btn" href="${s._url}" target="_blank">✏️ Edit</a></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Add form ──────────────────────────────────────────────────────────────────
+function populateFormDropdowns() {
+  const map = {
+    'a-project':    'project',
+    'a-experiment': 'experiment',
+    'a-domain':     'domain',
+    'a-rcm':        'rcm_model',
+    'a-status':     'status',
+    'a-sc':         'supercomputer',
+  };
+  for (const [id, listKey] of Object.entries(map)) {
+    const sel = document.getElementById(id);
+    sel.innerHTML = '';
+    (lists[listKey]||[]).forEach(v => {
+      const o = document.createElement('option');
+      o.value = o.textContent = v;
+      sel.appendChild(o);
+    });
+  }
+  updateLbcList();
+}
+
+function updateLbcList() {
+  const exp   = document.getElementById('a-experiment').value;
+  const isEval = exp === 'Evaluation';
+  const lbcList = isEval
+    ? (lists['ic_lbc_reanalysis'] || [])
+    : (lists['ic_lbc_gcm'] || []);
+  const label = isEval ? 'IC/LBC — Reanalysis' : 'IC/LBC — CMIP6 GCM';
+  document.getElementById('a-lbc-label').textContent = label;
+  const sel = document.getElementById('a-lbc');
+  sel.innerHTML = '';
+  lbcList.forEach(v => {
+    const o = document.createElement('option');
+    o.value = o.textContent = v;
+    sel.appendChild(o);
+  });
+}
+
+function generateYaml() {
+  const nextId = String(allSims.length + 1).padStart(3,'0');
+  const exp    = document.getElementById('a-experiment').value;
+  const proj   = document.getElementById('a-project').value;
+  const slug   = `${nextId}_${proj.replace(/\s+/g,'_').slice(0,20)}_${exp.replace(/\s+/g,'_')}`;
+  const today  = new Date().toISOString().split('T')[0];
+
+  const sim = {
+    id:                nextId,
+    project:           proj,
+    experiment:        exp,
+    domain:            document.getElementById('a-domain').value,
+    spatial_resolution:document.getElementById('a-res').value,
+    period: {
+      spin_up: parseInt(document.getElementById('a-spinup').value),
+      start:   parseInt(document.getElementById('a-start').value),
+      end:     parseInt(document.getElementById('a-end').value),
+    },
+    rcm_model: document.getElementById('a-rcm').value,
+    ic_lbc:    document.getElementById('a-lbc').value,
+    status:    document.getElementById('a-status').value,
+    compute: {
+      supercomputer:       document.getElementById('a-sc').value,
+      cores:               parseInt(document.getElementById('a-cores').value),
+      timestep_s:          25,
+      relaxation_zone_pts: 23,
+      run_time_1yr_h:      parseFloat(document.getElementById('a-rt').value),
+      output_frequency:    '1 hr - 3 hr - 6 hr',
+      size_1yr_gb:         parseFloat(document.getElementById('a-size').value),
+    },
+    work_path: document.getElementById('a-path').value,
+    notes:     document.getElementById('a-notes').value,
+    metadata: {
+      created_by: 'dashboard',
+      created_at: today,
+      updated_at: today,
+    }
+  };
+
+  const yamlText = jsyaml.dump(sim, { lineWidth: -1 });
+  document.getElementById('yaml-text').textContent = yamlText;
+  document.getElementById('yaml-output').style.display = 'block';
+
+  document.getElementById('add-msg').innerHTML = `
+    <div class="success">
+      ✅ YAML generated for <b>${slug}.yaml</b><br>
+      Copy it and create a new file at:
+      <a href="https://github.com/${OWNER}/${REPO}/new/${BRANCH}/simulations" target="_blank">
+        github.com → simulations/ → Add file → Create new file
+      </a>
+      — paste the YAML, name the file <b>${slug}.yaml</b>, then commit.
+    </div>`;
+}
+
+function copyYaml() {
+  navigator.clipboard.writeText(document.getElementById('yaml-text').textContent)
+    .then(() => alert('Copied to clipboard!'));
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+function showError(msg) {
+  document.getElementById('error-box').innerHTML = msg
+    ? `<div class="error">⚠️ ${msg}</div>` : '';
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+loadData();
+</script>
+</body>
+</html>

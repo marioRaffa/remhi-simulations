@@ -36,13 +36,23 @@ allowed_projects:
   - EURO-CORDEX
 
 allowed_domains:
-  - Africa CORDEX
-  - ALPAERA
+  - EUR-CORDEX
+  - AFR-CORDEX
+  - NAM-CORDEX
+  - SAM-CORDEX
+  - CAM-CORDEX
+  - MED-CORDEX
+  - MNA-CORDEX
+  - WAS-CORDEX
+  - EAS-CORDEX
+  - SEA-CORDEX
+  - CAS-CORDEX
+  - AUS-CORDEX
+  - ARC-CORDEX
+  - ANT-CORDEX
 
 allowed_rcm:
   - CCLM
   - ICLM
 
-allowed_ic_lbc:
-  - ERA5
-  - GCM
+# ic_lbc validated against lists.yaml ic_lbc_reanalysis + ic_lbc_gcm

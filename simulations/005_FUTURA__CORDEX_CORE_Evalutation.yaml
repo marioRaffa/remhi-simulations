@@ -17,7 +17,7 @@ compute:
   run_time_1yr_h: null
   output_frequency: 1 hr - 3 hr - 6 hr
   size_1yr_gb: 789
-work_path: (Athena) /work/mr29116/EUCP_SW/cosmo
+work_path: /work/mr29116/EUCP_SW/cosmo
 notes: ''
 metadata:
   created_by: mr29116

@@ -1,6 +1,6 @@
 # 🌍 REMHI Climate Simulations
 
-**CMCC — REMHI Division** | Simulation tracking system
+**CMCC — REMHI Division** | Climate simulation tracking system
 
 ---
 
@@ -9,85 +9,80 @@
 ```
 remhi-simulations/
 ├── simulations/          ← one YAML file per simulation
+├── docs/
+│   └── index.html        ← GitHub Pages dashboard (HTML+JS, no server needed)
 ├── dashboard/
-│   └── app.py            ← Streamlit web dashboard
+│   └── app.py            ← Streamlit dashboard (alternative)
 ├── scripts/
 │   └── validate.py       ← YAML validation
 ├── schema/
 │   └── simulation.schema.yaml
+├── lists.yaml            ← single source of truth for all dropdown options
 ├── requirements.txt
 └── README.md
 ```
 
 ---
 
-## Quick start
+## Dashboard — GitHub Pages (recommended)
 
-### 1. Clone the repo
-```bash
-git clone https://github.com/CMCC-REMHI/remhi-simulations.git
-cd remhi-simulations
-```
+No server needed. Runs entirely in the browser via GitHub API.
 
-### 2. Install dependencies
-```bash
-pip install -r requirements.txt
-```
+**URL**: `https://marioRaffa.github.io/remhi-simulations/`
 
-### 3. Run the dashboard
-```bash
-streamlit run dashboard/app.py
-```
-Opens at **http://localhost:8501**
+### Setup (one time)
+1. Go to **Settings → Pages**
+2. Source: **Deploy from a branch** → Branch: `main` / folder: `/docs`
+3. Save → wait ~1 minute
+
+### Usage
+- **View**: open the URL — no login needed for public repos
+- **Private repo**: enter your GitHub token in the sidebar (saved automatically in browser)
+- **Edit simulation**: click ✏️ Edit → opens GitHub editor directly
+- **Add simulation**: tab ➕ Add → generates YAML → copy to GitHub
 
 ---
 
-## Dashboard
+## Dropdown lists (`lists.yaml`)
 
-| Feature | Who |
+Edit `lists.yaml` directly on GitHub to add/remove options. Changes apply immediately.
+
+| Key | Used for |
 |---|---|
-| View all simulations, charts, filters | Everyone (no login) |
-| Edit simulation fields and status | Logged-in users |
-| Add new simulations | Logged-in users |
-
-**Default credentials** (change before deploying!):
-- `mario` / `remhi2026`
-- `collega1` / `remhi2026`
-- `admin` / `admin2026`
-
-To change a password, generate a SHA-256 hash:
-```bash
-python3 -c "import hashlib; print(hashlib.sha256(b'newpassword').hexdigest())"
-```
-Then update the `USERS` dict in `dashboard/app.py`.
+| `experiment` | Experiment type |
+| `status` | Simulation status |
+| `supercomputer` | HPC system |
+| `project` | Project name |
+| `domain` | CORDEX domain |
+| `rcm_model` | Regional Climate Model |
+| `ic_lbc_reanalysis` | IC/LBC when experiment = Evaluation |
+| `ic_lbc_gcm` | IC/LBC when experiment = Historical or SSP* |
 
 ---
 
-## Adding a simulation manually (YAML)
-
-Create a new file in `simulations/` following this template:
+## Simulation YAML template
 
 ```yaml
 id: "009"
-project: "FUTURA - CORDEX CORE"
-experiment: "Historical"
-domain: "Greater Alps - 522 x 490 x 50"
+project: "FUTURA - CORDEX CORE"   # see lists.yaml → project
+experiment: "Historical"           # Evaluation | Historical | SSP1-2.6 | SSP2-4.5 | SSP3-7.0 | SSP5-8.5
+domain: "EUR-CORDEX"               # see lists.yaml → domain
 spatial_resolution: "0.0275° - 3 km"
 period:
   spin_up: 1995
   start: 1996
   end: 2005
-rcm_model: "cclm-sp_2.4_terra_urb_2.3.1_clean"
-status: "Planned"          # Completed | Ongoing | Planned | NOT Planned | Paused | Failed
+rcm_model: "CCLM"                  # CCLM | ICLM
+ic_lbc: "EC-Earth3"                # reanalysis if Evaluation, CMIP6 GCM otherwise
+status: "Planned"                  # Completed | Ongoing | Planned | NOT Planned | Paused | Failed
 compute:
-  supercomputer: "Athena"
+  supercomputer: "Cassandra"       # Cassandra | Juno | Other Cluster
   cores: 1536
   timestep_s: 25
   relaxation_zone_pts: 23
   run_time_1yr_h: 54.75
   output_frequency: "1 hr - 3 hr - 6 hr"
   size_1yr_gb: 591
-nesting: "2nest - CCLM_EURO-CORDEX_0.11 (GCM EC-EARTH RCP4.5)"
 work_path: "/work/mr29116/..."
 notes: ""
 metadata:
@@ -96,44 +91,13 @@ metadata:
   updated_at: "2026-03-24"
 ```
 
-Then validate and push:
-```bash
-python3 scripts/validate.py
-git add simulations/009_*.yaml
-git commit -m "Add simulation 009: Historical / Greater Alps"
-git push
-```
-
 ---
 
-## Deploy on Streamlit Cloud (free, public URL)
+## Validate YAML files
 
-1. Push this repo to GitHub
-2. Go to [share.streamlit.io](https://share.streamlit.io)
-3. Connect your GitHub repo
-4. Set **Main file path**: `dashboard/app.py`
-5. Click **Deploy** → your colleagues get a URL, no install needed
-
----
-
-## Validation
-
-GitHub Actions automatically validates all YAML files on every push.
-Run locally:
 ```bash
+pip install pyyaml
 python3 scripts/validate.py
 ```
 
----
-
-## Workflow for colleagues
-
-```
-Edit YAML or use dashboard
-         ↓
-  git add + commit + push
-         ↓
-  GitHub Actions validates
-         ↓
-  Dashboard auto-refreshes
-```
+GitHub Actions runs this automatically on every push.

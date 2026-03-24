@@ -292,7 +292,7 @@ def edit_panel(sims):
                                  index=safe_index(LISTS["rcm_model"], sim.get("rcm_model","")))
         # IC/LBC reacts to new_exp in real time
         lbc_opts  = get_lbc_list(new_exp)
-        new_lbc   = st.selectbox(lbc_label(new_exp), lbc_opts, key="e_lbc",
+        new_lbc   = st.selectbox(lbc_label(new_exp), lbc_opts, key=f"e_lbc_{new_exp}",
                                  index=safe_index(lbc_opts, sim.get("ic_lbc","")))
 
     with c3:
@@ -350,7 +350,7 @@ def add_panel(sims):
         rcm   = st.selectbox("RCM Model",  LISTS["rcm_model"],   key="a_rcm")
         # IC/LBC reacts to experiment in real time
         lbc_opts = get_lbc_list(new_exp)
-        lbc      = st.selectbox(lbc_label(new_exp), lbc_opts,    key="a_lbc")
+        lbc      = st.selectbox(lbc_label(new_exp), lbc_opts,    key=f"a_lbc_{new_exp}")
 
     with c3:
         stat  = st.selectbox("Status",        LISTS["status"],        key="a_stat")

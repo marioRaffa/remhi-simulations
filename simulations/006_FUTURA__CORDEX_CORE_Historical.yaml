@@ -17,7 +17,7 @@ compute:
   run_time_1yr_h: 48.67
   output_frequency: 1 hr - 3 hr - 6 hr
   size_1yr_gb: 789
-work_path: (Zeus) /work/remhi/mr29116/EUCP_SW/HIST/cosmo
+work_path: /work/remhi/mr29116/EUCP_SW/HIST/cosmo
 notes: ''
 metadata:
   created_by: mr29116

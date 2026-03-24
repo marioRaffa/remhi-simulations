@@ -17,7 +17,7 @@ compute:
   run_time_1yr_h: 54.75
   output_frequency: 1 hr - 3 hr - 6 hr
   size_1yr_gb: 591
-work_path: (Athena) /work/mr29116/EUCP/RCP85_FAR
+work_path: /work/mr29116/EUCP/RCP85_FAR
 notes: ''
 metadata:
   created_by: mr29116

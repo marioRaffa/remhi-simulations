@@ -1,7 +1,7 @@
 id: '001'
 project: FUTURA - CORDEX CORE
-experiment: Evalution
-domain: ALPAERA
+experiment: Evaluation
+domain: EUR-CORDEX
 spatial_resolution: 0.0275° - 3 km
 period:
   spin_up: 1999

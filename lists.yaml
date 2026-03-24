@@ -3,7 +3,7 @@
 # ══════════════════════════════════════════════════════════════════
 
 experiment:
-  - Evalution
+  - Evaluation
   - Historical
   - SSP1-2.6
   - SSP2-4.5
@@ -47,7 +47,7 @@ rcm_model:
   - CCLM
   - ICLM
 
-# IC/LBC for Evalution experiment → reanalysis only
+# IC/LBC for Evaluation experiment → reanalysis only
 ic_lbc_reanalysis:
   - ERA5
   - ERA-Interim

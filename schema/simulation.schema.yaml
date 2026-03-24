@@ -19,7 +19,7 @@ allowed_status:
   - Failed
 
 allowed_experiments:
-  - Evalution
+  - Evaluation
   - Historical
   - SSP1-2.6
   - SSP2-4.5

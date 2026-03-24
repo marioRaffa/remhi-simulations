@@ -8,21 +8,14 @@ import streamlit as st
 import plotly.express as px
 from pathlib import Path
 
-SIMS_DIR = Path(__file__).parent.parent / "simulations"
+SIMS_DIR   = Path(__file__).parent.parent / "simulations"
+LISTS_FILE = Path(__file__).parent.parent / "lists.yaml"
 
 USERS = {
     "mario":    hashlib.sha256(b"remhi2026").hexdigest(),
     "collega1": hashlib.sha256(b"remhi2026").hexdigest(),
     "admin":    hashlib.sha256(b"admin2026").hexdigest(),
 }
-
-# LISTS loaded from lists.yaml — see load_lists()
-LISTS_FILE = Path(__file__).parent.parent / "lists.yaml"
-
-def load_lists():
-    # No cache — always reads fresh from file so GitHub edits apply immediately
-    with open(LISTS_FILE) as f:
-        return yaml.safe_load(f)
 
 STATUS_COLORS = {
     "Completed":   "#70AD47", "Ongoing":     "#4472C4",
@@ -49,30 +42,42 @@ st.markdown("""<style>
     color:#fff!important;
     border-color:rgba(255,255,255,0.3)!important}
 [data-testid="stSidebar"] .stSelectbox svg{fill:#fff!important}
-.stSelectbox [data-baseweb="select"] span{color:var(--text-color)!important}
-.stSelectbox [data-baseweb="popover"] li{color:#000!important;background:#fff!important}
 </style>""", unsafe_allow_html=True)
 
-# ── Auth ──────────────────────────────────────────────────────────────────────
+# ── Helpers ───────────────────────────────────────────────────────────────────
+def load_lists():
+    with open(LISTS_FILE) as f:
+        return yaml.safe_load(f)
+
+def get_lbc_list(experiment):
+    if experiment == "Evaluation":
+        return LISTS.get("ic_lbc_reanalysis", ["ERA5"])
+    return LISTS.get("ic_lbc_gcm", ["EC-Earth3"])
+
+def lbc_label(experiment):
+    return "IC/LBC — Reanalysis" if experiment == "Evaluation" else "IC/LBC — CMIP6 GCM"
+
 def check_password(u, p):
     return USERS.get(u) == hashlib.sha256(p.encode()).hexdigest()
+
+def safe_index(lst, val):
+    return lst.index(val) if val in lst else 0
+
+# ── Auth ──────────────────────────────────────────────────────────────────────
+if "logged_in" not in st.session_state:
+    st.session_state["logged_in"] = False
 
 def login_form():
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
-        with st.form("login"):
-            u = st.text_input("Username")
-            p = st.text_input("Password", type="password")
-            ok = st.form_submit_button("Login", use_container_width=True)
-        if ok:
+        u  = st.text_input("Username", key="login_u")
+        p  = st.text_input("Password", type="password", key="login_p")
+        if st.button("Login", use_container_width=True):
             if check_password(u, p):
                 st.session_state.update({"logged_in": True, "username": u})
                 st.rerun()
             else:
                 st.error("Invalid credentials.")
-
-if "logged_in" not in st.session_state:
-    st.session_state["logged_in"] = False
 
 # ── Data ──────────────────────────────────────────────────────────────────────
 @st.cache_data(ttl=30)
@@ -98,21 +103,21 @@ def sims_to_df(sims):
         c = s.get("compute", {})
         p = s.get("period", {})
         rows.append({
-            "#":           s.get("id", ""),
-            "Project":     s.get("project", ""),
-            "Experiment":  s.get("experiment", ""),
-            "Domain":      s.get("domain", ""),
-            "Resolution":  s.get("spatial_resolution", ""),
-            "Period":      f"{p.get('start','')}/{p.get('end','')}",
-            "RCM Model":   s.get("rcm_model", ""),
-            "IC/LBC":      s.get("ic_lbc", ""),
-            "Status":      s.get("status", ""),
+            "#":             s.get("id", ""),
+            "Project":       s.get("project", ""),
+            "Experiment":    s.get("experiment", ""),
+            "Domain":        s.get("domain", ""),
+            "Resolution":    s.get("spatial_resolution", ""),
+            "Period":        f"{p.get('start','')}/{p.get('end','')}",
+            "RCM Model":     s.get("rcm_model", ""),
+            "IC/LBC":        s.get("ic_lbc", ""),
+            "Status":        s.get("status", ""),
             "Supercomputer": c.get("supercomputer", ""),
-            "Cores":       c.get("cores", ""),
-            "Run time [h]":c.get("run_time_1yr_h", ""),
-            "Size [GB]":   c.get("size_1yr_gb", ""),
-            "Work Path":   s.get("work_path", ""),
-            "Notes":       s.get("notes", ""),
+            "Cores":         c.get("cores", ""),
+            "Run time [h]":  c.get("run_time_1yr_h", ""),
+            "Size [GB]":     c.get("size_1yr_gb", ""),
+            "Work Path":     s.get("work_path", ""),
+            "Notes":         s.get("notes", ""),
         })
     return pd.DataFrame(rows)
 
@@ -131,19 +136,18 @@ def sidebar(sims):
 
     st.sidebar.markdown("### 🔍 Filters")
 
-    def filt(label, list_key):
+    def filt(label, list_key, key):
         opts = ["All"] + LISTS.get(list_key, [])
-        return st.sidebar.selectbox(label, opts)
+        return st.sidebar.selectbox(label, opts, key=key)
 
-    sel_proj  = filt("Project",       "project")
-    sel_exp   = filt("Experiment",    "experiment")
-    sel_stat  = filt("Status",        "status")
-    sel_sc    = filt("Supercomputer", "supercomputer")
-    sel_dom   = filt("Domain",        "domain")
-    sel_rcm   = filt("RCM Model",     "rcm_model")
-    # Sidebar IC/LBC: merge both reanalysis + GCM for filtering
-    all_lbc = ["All"] + LISTS.get("ic_lbc_reanalysis",[]) + LISTS.get("ic_lbc_gcm",[])
-    sel_lbc = st.sidebar.selectbox("IC/LBC", all_lbc)
+    sel_proj = filt("Project",       "project",       "f_proj")
+    sel_exp  = filt("Experiment",    "experiment",    "f_exp")
+    sel_stat = filt("Status",        "status",        "f_stat")
+    sel_sc   = filt("Supercomputer", "supercomputer", "f_sc")
+    sel_dom  = filt("Domain",        "domain",        "f_dom")
+    sel_rcm  = filt("RCM Model",     "rcm_model",     "f_rcm")
+    all_lbc  = ["All"] + LISTS.get("ic_lbc_reanalysis",[]) + LISTS.get("ic_lbc_gcm",[])
+    sel_lbc  = st.sidebar.selectbox("IC/LBC", all_lbc, key="f_lbc")
 
     st.sidebar.markdown("---")
     if st.sidebar.button("🔄 Refresh"):
@@ -166,10 +170,10 @@ def apply_filters(sims, proj, exp, stat, sc, dom, rcm, lbc):
 # ── KPI row ───────────────────────────────────────────────────────────────────
 def kpi_row(sims):
     kpis = [
-        ("Total",       len(sims),                                          "#1F3864","#D9E1F2"),
-        ("Completed",   sum(1 for s in sims if s.get("status")=="Completed"),"#375623","#E2EFDA"),
-        ("Ongoing",     sum(1 for s in sims if s.get("status")=="Ongoing"),  "#1F3864","#D9E1F2"),
-        ("Planned",     sum(1 for s in sims if s.get("status")=="Planned"),  "#BF8F00","#FFF2CC"),
+        ("Total",       len(sims),                                             "#1F3864","#D9E1F2"),
+        ("Completed",   sum(1 for s in sims if s.get("status")=="Completed"),  "#375623","#E2EFDA"),
+        ("Ongoing",     sum(1 for s in sims if s.get("status")=="Ongoing"),    "#1F3864","#D9E1F2"),
+        ("Planned",     sum(1 for s in sims if s.get("status")=="Planned"),    "#BF8F00","#FFF2CC"),
         ("NOT Planned", sum(1 for s in sims if s.get("status")=="NOT Planned"),"#C00000","#FFDCE0"),
     ]
     for col, (label, val, fg, bg) in zip(st.columns(5), kpis):
@@ -186,7 +190,6 @@ def charts(sims):
     if df.empty:
         st.info("No data to display.")
         return
-
     c1, c2 = st.columns(2)
     with c1:
         st.markdown("#### Status distribution")
@@ -197,7 +200,6 @@ def charts(sims):
         fig.update_traces(textposition="outside", textinfo="label+value")
         fig.update_layout(showlegend=False, margin=dict(t=10,b=10,l=10,r=10), height=260)
         st.plotly_chart(fig, use_container_width=True)
-
     with c2:
         st.markdown("#### By project & status")
         grp = df.groupby(["Project","Status"]).size().reset_index(name="Count")
@@ -205,9 +207,7 @@ def charts(sims):
                       color_discrete_map=STATUS_COLORS, barmode="stack", text_auto=True)
         fig2.update_layout(margin=dict(t=10,b=10,l=10,r=10), height=260,
                            legend=dict(orientation="h", y=-0.35))
-        fig2.update_xaxes(tickangle=-15)
         st.plotly_chart(fig2, use_container_width=True)
-
     c3, c4, c5 = st.columns(3)
     with c3:
         st.markdown("#### By supercomputer")
@@ -217,7 +217,6 @@ def charts(sims):
         fig3.update_layout(margin=dict(t=10,b=10,l=10,r=10), height=230,
                            legend=dict(orientation="h", y=-0.4))
         st.plotly_chart(fig3, use_container_width=True)
-
     with c4:
         st.markdown("#### By experiment")
         grp4 = df.groupby(["Experiment","Status"]).size().reset_index(name="Count")
@@ -227,7 +226,6 @@ def charts(sims):
                            legend=dict(orientation="h", y=-0.4))
         fig4.update_xaxes(tickangle=-20)
         st.plotly_chart(fig4, use_container_width=True)
-
     with c5:
         st.markdown("#### By IC/LBC")
         grp5 = df.groupby(["IC/LBC","Status"]).size().reset_index(name="Count")
@@ -251,82 +249,77 @@ def simulation_table(sims):
               .hide(axis="index"))
     st.dataframe(styled, use_container_width=True, height=320,
                  column_config={
-                     "#":             st.column_config.TextColumn(width="small"),
-                     "Cores":         st.column_config.NumberColumn(width="small"),
-                     "Run time [h]":  st.column_config.NumberColumn(format="%.1f", width="small"),
-                     "Size [GB]":     st.column_config.NumberColumn(format="%.0f", width="small"),
-                     "IC/LBC":        st.column_config.TextColumn(width="small"),
+                     "#":            st.column_config.TextColumn(width="small"),
+                     "Cores":        st.column_config.NumberColumn(width="small"),
+                     "Run time [h]": st.column_config.NumberColumn(format="%.1f", width="small"),
+                     "Size [GB]":    st.column_config.NumberColumn(format="%.0f", width="small"),
+                     "IC/LBC":       st.column_config.TextColumn(width="medium"),
                  })
 
-# ── IC/LBC helper ────────────────────────────────────────────────────────────
-def get_lbc_list(experiment):
-    """Return reanalysis list for Evalution, GCM list for everything else."""
-    if experiment == "Evalution":
-        return LISTS.get("ic_lbc_reanalysis", ["ERA5"])
-    else:
-        return LISTS.get("ic_lbc_gcm", ["EC-Earth3"])
-
-# ── Edit panel ────────────────────────────────────────────────────────────────
+# ── Edit panel — NO st.form so widgets react to each other ───────────────────
 def edit_panel(sims):
     st.markdown("### ✏️ Edit simulation")
+
     ids = [s.get("id") for s in sims]
-    sel_id = st.selectbox("Select simulation #", ids,
-        format_func=lambda x: f"#{x} — "
-            f"{next((s.get('experiment','') for s in sims if s.get('id')==x), '')} | "
-            f"{next((s.get('project','')    for s in sims if s.get('id')==x), '')}")
+    sel_id = st.selectbox("Select simulation #", ids, key="edit_sel",
+        format_func=lambda x: f"#{x}  {next((s.get('experiment','') for s in sims if s.get('id')==x),'')} | "
+                              f"{next((s.get('project','') for s in sims if s.get('id')==x),'')}")
 
     sim = next((s for s in sims if s.get("id") == sel_id), None)
-    if not sim: return
+    if not sim:
+        return
 
-    with st.form("edit_form"):
-        c1, c2, c3 = st.columns(3)
-        with c1:
-            new_proj = st.selectbox("Project",     LISTS["project"],
-                index=LISTS["project"].index(sim.get("project","")) if sim.get("project") in LISTS["project"] else 0)
-            new_exp  = st.selectbox("Experiment",  LISTS["experiment"],
-                index=LISTS["experiment"].index(sim.get("experiment","")) if sim.get("experiment") in LISTS["experiment"] else 0)
-            new_dom  = st.selectbox("Domain",      LISTS["domain"],
-                index=LISTS["domain"].index(sim.get("domain","")) if sim.get("domain") in LISTS["domain"] else 0)
-            new_res  = st.text_input("Spatial resolution", sim.get("spatial_resolution",""))
+    cmp = sim.get("compute", {})
+    p   = sim.get("period", {})
 
-        with c2:
-            p = sim.get("period", {})
-            new_spin  = st.number_input("Spin-up", value=int(p.get("spin_up") or 0), step=1)
-            new_start = st.number_input("Start",   value=int(p.get("start")   or 0), step=1)
-            new_end   = st.number_input("End",     value=int(p.get("end")     or 0), step=1)
-            new_rcm   = st.selectbox("RCM Model",  LISTS["rcm_model"],
-                index=LISTS["rcm_model"].index(sim.get("rcm_model","")) if sim.get("rcm_model") in LISTS["rcm_model"] else 0)
-            _lbc_opts = get_lbc_list(sim.get("experiment",""))
-            _lbc_label = "IC/LBC — Reanalysis" if sim.get("experiment") == "Evalution" else "IC/LBC — CMIP6 GCM"
-            new_lbc = st.selectbox(_lbc_label, _lbc_opts,
-                index=_lbc_opts.index(sim.get("ic_lbc","")) if sim.get("ic_lbc") in _lbc_opts else 0)
+    st.markdown("---")
+    c1, c2, c3 = st.columns(3)
 
-        with c3:
-            cmp = sim.get("compute", {})
-            new_stat  = st.selectbox("Status",     LISTS["status"],
-                index=LISTS["status"].index(sim.get("status","")) if sim.get("status") in LISTS["status"] else 0)
-            new_sc    = st.selectbox("Supercomputer", LISTS["supercomputer"],
-                index=LISTS["supercomputer"].index(cmp.get("supercomputer","")) if cmp.get("supercomputer") in LISTS["supercomputer"] else 0)
-            new_cores = st.number_input("Cores",   value=int(cmp.get("cores") or 0), step=1)
-            new_rt    = st.number_input("Run time 1yr [h]", value=float(cmp.get("run_time_1yr_h") or 0.0), step=0.01)
-            new_size  = st.number_input("Size 1yr [GB]",    value=float(cmp.get("size_1yr_gb") or 0.0), step=1.0)
+    with c1:
+        new_proj = st.selectbox("Project",    LISTS["project"],    key="e_proj",
+                                index=safe_index(LISTS["project"], sim.get("project","")))
+        new_exp  = st.selectbox("Experiment", LISTS["experiment"], key="e_exp",
+                                index=safe_index(LISTS["experiment"], sim.get("experiment","")))
+        new_dom  = st.selectbox("Domain",     LISTS["domain"],     key="e_dom",
+                                index=safe_index(LISTS["domain"], sim.get("domain","")))
+        new_res  = st.text_input("Spatial resolution", sim.get("spatial_resolution",""), key="e_res")
 
-        new_path  = st.text_input("Work Path", sim.get("work_path",""))
-        new_notes = st.text_area("Notes",      sim.get("notes",""), height=60)
-        submitted = st.form_submit_button("💾 Save changes", use_container_width=True, type="primary")
+    with c2:
+        new_spin  = st.number_input("Spin-up", value=int(p.get("spin_up") or 0), step=1, key="e_spin")
+        new_start = st.number_input("Start",   value=int(p.get("start")   or 0), step=1, key="e_start")
+        new_end   = st.number_input("End",     value=int(p.get("end")     or 0), step=1, key="e_end")
+        new_rcm   = st.selectbox("RCM Model",  LISTS["rcm_model"], key="e_rcm",
+                                 index=safe_index(LISTS["rcm_model"], sim.get("rcm_model","")))
+        # IC/LBC reacts to new_exp in real time
+        lbc_opts  = get_lbc_list(new_exp)
+        new_lbc   = st.selectbox(lbc_label(new_exp), lbc_opts, key="e_lbc",
+                                 index=safe_index(lbc_opts, sim.get("ic_lbc","")))
 
-    if submitted:
+    with c3:
+        new_stat  = st.selectbox("Status",        LISTS["status"],        key="e_stat",
+                                 index=safe_index(LISTS["status"], sim.get("status","")))
+        new_sc    = st.selectbox("Supercomputer",  LISTS["supercomputer"], key="e_sc",
+                                 index=safe_index(LISTS["supercomputer"], cmp.get("supercomputer","")))
+        new_cores = st.number_input("Cores",           value=int(cmp.get("cores") or 0),             step=1,    key="e_cores")
+        new_rt    = st.number_input("Run time 1yr [h]",value=float(cmp.get("run_time_1yr_h") or 0.0),step=0.01, key="e_rt")
+        new_size  = st.number_input("Size 1yr [GB]",   value=float(cmp.get("size_1yr_gb") or 0.0),   step=1.0,  key="e_size")
+
+    new_path  = st.text_input("Work Path", sim.get("work_path",""), key="e_path")
+    new_notes = st.text_area("Notes",      sim.get("notes",""),     key="e_notes", height=60)
+
+    if st.button("💾 Save changes", type="primary", key="e_save", use_container_width=True):
         sim.update({
             "project": new_proj, "experiment": new_exp, "domain": new_dom,
             "spatial_resolution": new_res, "rcm_model": new_rcm, "ic_lbc": new_lbc,
             "status": new_stat,
             "period": dict(spin_up=new_spin, start=new_start, end=new_end),
-            "compute": dict(supercomputer=new_sc, cores=new_cores,
-                            timestep_s=cmp.get("timestep_s",25),
-                            relaxation_zone_pts=cmp.get("relaxation_zone_pts",23),
-                            run_time_1yr_h=new_rt,
-                            output_frequency=cmp.get("output_frequency",""),
-                            size_1yr_gb=new_size),
+            "compute": dict(
+                supercomputer=new_sc, cores=new_cores,
+                timestep_s=cmp.get("timestep_s", 25),
+                relaxation_zone_pts=cmp.get("relaxation_zone_pts", 23),
+                run_time_1yr_h=new_rt,
+                output_frequency=cmp.get("output_frequency",""),
+                size_1yr_gb=new_size),
             "work_path": new_path, "notes": new_notes,
         })
         sim.setdefault("metadata",{}).update({
@@ -337,46 +330,43 @@ def edit_panel(sims):
         st.success(f"✅ Simulation #{sel_id} saved!")
         st.balloons()
 
-# ── Add panel ─────────────────────────────────────────────────────────────────
+# ── Add panel — NO st.form so IC/LBC reacts to experiment ────────────────────
 def add_panel(sims):
     st.markdown("### ➕ Add new simulation")
     next_id = str(len(sims) + 1).zfill(3)
 
-    # Experiment outside form so IC/LBC list updates reactively
-    c0a, c0b, c0c = st.columns(3)
-    with c0a:
-        exp = st.selectbox("Experiment", LISTS["experiment"], key="add_exp")
-    lbc_opts = get_lbc_list(exp)
-    lbc_label = "IC/LBC — Reanalysis" if exp == "Evalution" else "IC/LBC — CMIP6 GCM"
+    c1, c2, c3 = st.columns(3)
 
-    with st.form("add_form"):
-        c1, c2, c3 = st.columns(3)
-        with c1:
-            proj  = st.selectbox("Project",     LISTS["project"])
-            dom   = st.selectbox("Domain",      LISTS["domain"])
-            res   = st.text_input("Spatial resolution", "0.0275° - 3 km")
-        with c2:
-            spin  = st.number_input("Spin-up", value=1999, step=1)
-            start = st.number_input("Start",   value=2000, step=1)
-            end   = st.number_input("End",     value=2009, step=1)
-            rcm   = st.selectbox("RCM Model",  LISTS["rcm_model"])
-            lbc   = st.selectbox(lbc_label,    lbc_opts)
-        with c3:
-            stat  = st.selectbox("Status",      LISTS["status"])
-            sc    = st.selectbox("Supercomputer", LISTS["supercomputer"])
-            cores = st.number_input("Cores",    value=1536, step=1)
-            rt    = st.number_input("Run time 1yr [h]", value=0.0, step=0.01)
-            size  = st.number_input("Size 1yr [GB]",    value=0.0, step=1.0)
+    with c1:
+        proj    = st.selectbox("Project",    LISTS["project"],    key="a_proj")
+        new_exp = st.selectbox("Experiment", LISTS["experiment"], key="a_exp")
+        dom     = st.selectbox("Domain",     LISTS["domain"],     key="a_dom")
+        res     = st.text_input("Spatial resolution", "0.0275° - 3 km", key="a_res")
 
-        path  = st.text_input("Work Path", "")
-        notes = st.text_area("Notes", "", height=60)
-        submitted = st.form_submit_button("➕ Add to Database", use_container_width=True, type="primary")
+    with c2:
+        spin  = st.number_input("Spin-up", value=1999, step=1,   key="a_spin")
+        start = st.number_input("Start",   value=2000, step=1,   key="a_start")
+        end   = st.number_input("End",     value=2009, step=1,   key="a_end")
+        rcm   = st.selectbox("RCM Model",  LISTS["rcm_model"],   key="a_rcm")
+        # IC/LBC reacts to experiment in real time
+        lbc_opts = get_lbc_list(new_exp)
+        lbc      = st.selectbox(lbc_label(new_exp), lbc_opts,    key="a_lbc")
 
-    if submitted:
-        slug  = f"{next_id}_{proj.replace(' ','_')[:20]}_{exp.replace(' ','_')}"
+    with c3:
+        stat  = st.selectbox("Status",        LISTS["status"],        key="a_stat")
+        sc    = st.selectbox("Supercomputer",  LISTS["supercomputer"], key="a_sc")
+        cores = st.number_input("Cores",           value=1536, step=1,    key="a_cores")
+        rt    = st.number_input("Run time 1yr [h]",value=0.0,  step=0.01, key="a_rt")
+        size  = st.number_input("Size 1yr [GB]",   value=0.0,  step=1.0,  key="a_size")
+
+    path  = st.text_input("Work Path", "", key="a_path")
+    notes = st.text_area("Notes",      "", key="a_notes", height=60)
+
+    if st.button("➕ Add to Database", type="primary", key="a_save", use_container_width=True):
+        slug  = f"{next_id}_{proj.replace(' ','_')[:20]}_{new_exp.replace(' ','_')}"
         fpath = str(SIMS_DIR / f"{slug}.yaml")
         new_sim = dict(
-            id=next_id, project=proj, experiment=exp, domain=dom,
+            id=next_id, project=proj, experiment=new_exp, domain=dom,
             spatial_resolution=res,
             period=dict(spin_up=spin, start=start, end=end),
             rcm_model=rcm, ic_lbc=lbc, status=stat,
@@ -397,9 +387,9 @@ def add_panel(sims):
 # ── Main ──────────────────────────────────────────────────────────────────────
 def main():
     global LISTS
-    LISTS = load_lists()
-    sims = load_simulations()
-    filters = sidebar(sims)
+    LISTS    = load_lists()
+    sims     = load_simulations()
+    filters  = sidebar(sims)
     filtered = apply_filters(sims, *filters)
 
     st.markdown("# 🌍 REMHI Climate Simulations")

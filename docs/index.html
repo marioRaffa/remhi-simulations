@@ -305,7 +305,7 @@ async function loadData() {
       return sim;
     }));
 
-    allSims.sort((a,b) => (a.id||'').localeCompare(b.id||''));
+    allSims.sort((a,b) => String(a.id||'').localeCompare(String(b.id||'')));
 
     populateFilters();
     populateFormDropdowns();

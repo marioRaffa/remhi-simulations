@@ -175,11 +175,11 @@ tr:hover td{background:#fafbff}
       </div>
       <div class="form-grid">
         <div class="field"><label>Spin-up year</label>
-          <input type="number" id="a-spinup" value="1999"></div>
+          <input type="number" id="a-spinup" value=""></div>
         <div class="field"><label>Start year</label>
-          <input type="number" id="a-start" value="2000"></div>
+          <input type="number" id="a-start" value=""></div>
         <div class="field"><label>End year</label>
-          <input type="number" id="a-end" value="2009"></div>
+          <input type="number" id="a-end" value=""></div>
       </div>
       <div class="form-grid">
         <div class="field"><label>RCM Model</label><select id="a-rcm"></select></div>
@@ -195,15 +195,15 @@ tr:hover td{background:#fafbff}
       <div class="form-grid">
         <div class="field"><label>Supercomputer</label><select id="a-sc"></select></div>
         <div class="field"><label>Cores</label>
-          <input type="number" id="a-cores" value="1536"></div>
+          <input type="number" id="a-cores" value=""></div>
         <div class="field"><label>Run time 1yr [h]</label>
-          <input type="number" id="a-rt" value="0" step="0.01"></div>
+          <input type="number" id="a-rt" value="" step="0.01"></div>
       </div>
       <div class="form-grid">
         <div class="field"><label>Spatial resolution</label>
-          <input type="text" id="a-res" value="0.0275 deg - 3 km"></div>
+          <input type="text" id="a-res" placeholder="e.g. 0.0275 deg - 3 km" value=""></div>
         <div class="field"><label>Size 1month [GB]</label>
-          <input type="number" id="a-size" value="0"></div>
+          <input type="number" id="a-size" value=""></div>
         <div class="field"><label>Work path</label>
           <input type="text" id="a-path" placeholder="/work/…"></div>
       </div>
@@ -408,9 +408,9 @@ function openAddForm(el){
   editingFile=null; editingSha=null;
   populateFormDropdowns();
   ['a-path','a-notes'].forEach(id=>setVal(id,''));
-  setVal('a-spinup',1999);setVal('a-start',2000);setVal('a-end',2009);
-  setVal('a-cores',1536);setVal('a-rt',0);setVal('a-size',0);
-  setVal('a-res','0.0275 deg - 3 km');
+  setVal('a-spinup','');setVal('a-start','');setVal('a-end','');
+  setVal('a-cores','');setVal('a-rt','');setVal('a-size','');
+  setVal('a-res','');
   document.getElementById('form-title').textContent='Add simulation';
   document.getElementById('form-badge').textContent='NEW';
   document.getElementById('form-badge').className='mode-badge mode-add';

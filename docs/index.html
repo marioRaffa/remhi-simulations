@@ -201,7 +201,7 @@ tr:hover td{background:#fafbff}
       </div>
       <div class="form-grid">
         <div class="field"><label>Spatial resolution</label>
-          <input type="text" id="a-res" value="0.0275° - 3 km"></div>
+          <input type="text" id="a-res" value="0.0275 deg - 3 km"></div>
         <div class="field"><label>Size 1yr [GB]</label>
           <input type="number" id="a-size" value="0"></div>
         <div class="field"><label>Work path</label>
@@ -405,7 +405,7 @@ function openAddForm(el){
   ['a-path','a-notes'].forEach(id=>setVal(id,''));
   setVal('a-spinup',1999);setVal('a-start',2000);setVal('a-end',2009);
   setVal('a-cores',1536);setVal('a-rt',0);setVal('a-size',0);
-  setVal('a-res','0.0275° - 3 km');
+  setVal('a-res','0.0275 deg - 3 km');
   document.getElementById('form-title').textContent='Add simulation';
   document.getElementById('form-badge').textContent='NEW';
   document.getElementById('form-badge').className='mode-badge mode-add';
@@ -487,7 +487,8 @@ async function saveSimulation(){
     ?editingFile.replace('.yaml','')
     :`${nextId}_${proj.replace(/[^a-zA-Z0-9]/g,'_').slice(0,20)}_${exp.replace(/[^a-zA-Z0-9]/g,'_')}`;
   const filePath=`simulations/${slug}.yaml`;
-  const content=btoa(unescape(encodeURIComponent(jsyaml.dump(sim,{lineWidth:-1}))));
+  const yamlStr=jsyaml.dump(sim,{lineWidth:-1});
+    const content=btoa(encodeURIComponent(yamlStr).replace(/%([0-9A-F]{2})/g,(_,p)=>String.fromCharCode('0x'+p)));
   const message=isEdit?`Update simulation ${nextId}: ${exp} — ${proj}`:`Add simulation ${nextId}: ${exp} — ${proj}`;
   try{
     const body={message,content,branch:BRANCH};

@@ -172,15 +172,14 @@ tr:hover td{background:#fafbff}
     <div class="form-card">
       <div id="add-msg"></div>
       <div class="info">
-        ℹ️ Filling this form generates a YAML file ready to copy into your GitHub repo
-        (<code>simulations/</code> folder). The dashboard updates automatically after commit.
+        ℹ️ Fill in the fields and click <b>Add simulation</b> — the record is saved directly to the repository. The dashboard updates automatically.<br><small>Requires a GitHub token with <code>repo</code> scope in the sidebar.</small>
       </div>
 
       <div class="form-grid">
         <div class="field"><label>Project</label>
           <select id="a-project"></select></div>
         <div class="field"><label>Experiment</label>
-          <select id="a-experiment" onchange="updateLbcList()"></select></div>
+          <select id="a-experiment" onchange="updateLbcList()" style="width:100%"></select></div>
         <div class="field"><label>Domain</label>
           <select id="a-domain"></select></div>
       </div>
@@ -195,8 +194,13 @@ tr:hover td{background:#fafbff}
       <div class="form-grid">
         <div class="field"><label>RCM Model</label>
           <select id="a-rcm"></select></div>
-        <div class="field"><label id="a-lbc-label">IC/LBC</label>
-          <select id="a-lbc"></select></div>
+        <div class="field">
+          <label id="a-lbc-label" style="color:#1F3864">IC/LBC — Reanalysis</label>
+          <select id="a-lbc" style="border:2px solid #1F3864"></select>
+          <div id="a-lbc-hint" style="font-size:10px;color:#888;margin-top:3px">
+            Changes based on Experiment selection above
+          </div>
+        </div>
         <div class="field"><label>Status</label>
           <select id="a-status"></select></div>
       </div>
@@ -221,14 +225,8 @@ tr:hover td{background:#fafbff}
       <div class="field" style="margin-bottom:8px"><label>Notes</label>
         <textarea id="a-notes" rows="2" placeholder="Optional notes…" style="width:100%"></textarea></div>
 
-      <button class="btn-primary" onclick="generateYaml()">📋 Generate YAML</button>
+      <button class="btn-primary" onclick="addSimulation()">➕ Add simulation</button>
 
-      <div id="yaml-output" style="display:none;margin-top:16px">
-        <div class="form-section">Generated YAML — copy and save as a new file in <code>simulations/</code></div>
-        <pre id="yaml-text" style="background:#1e1e2e;color:#cdd6f4;padding:16px;border-radius:8px;
-             font-size:12px;overflow-x:auto;white-space:pre;line-height:1.6"></pre>
-        <button class="btn-primary" onclick="copyYaml()" style="margin-top:8px">📋 Copy to clipboard</button>
-      </div>
     </div>
   </div>
 </div>
@@ -524,32 +522,58 @@ function populateFormDropdowns() {
       sel.appendChild(o);
     });
   }
+  // Call after all selects populated so experiment has a value
   updateLbcList();
 }
 
 function updateLbcList() {
-  const exp   = document.getElementById('a-experiment').value;
-  const isEval = exp === 'Evaluation';
+  if (!lists || !lists['ic_lbc_reanalysis']) return; // lists not loaded yet
+
+  const expSel  = document.getElementById('a-experiment');
+  const lbcSel  = document.getElementById('a-lbc');
+  const lbcLbl  = document.getElementById('a-lbc-label');
+  const lbcHint = document.getElementById('a-lbc-hint');
+  if (!expSel || !lbcSel) return;
+
+  const exp     = expSel.value;
+  const isEval  = (exp === 'Evaluation');
   const lbcList = isEval
     ? (lists['ic_lbc_reanalysis'] || [])
     : (lists['ic_lbc_gcm'] || []);
-  const label = isEval ? 'IC/LBC — Reanalysis' : 'IC/LBC — CMIP6 GCM';
-  document.getElementById('a-lbc-label').textContent = label;
-  const sel = document.getElementById('a-lbc');
-  sel.innerHTML = '';
+
+  lbcLbl.textContent  = isEval ? 'IC/LBC — Reanalysis' : 'IC/LBC — CMIP6 GCM';
+  lbcLbl.style.color  = isEval ? '#1F6B75' : '#4472C4';
+  lbcSel.style.borderColor = isEval ? '#1F6B75' : '#4472C4';
+  lbcHint.textContent = isEval
+    ? 'Reanalysis only (Evaluation run)'
+    : 'CMIP6 GCM forcing (Historical / SSP)';
+
+  lbcSel.innerHTML = '';
   lbcList.forEach(v => {
     const o = document.createElement('option');
     o.value = o.textContent = v;
-    sel.appendChild(o);
+    lbcSel.appendChild(o);
   });
 }
 
-function generateYaml() {
+async function addSimulation() {
+  const token = getToken();
+  if (!token) {
+    document.getElementById('add-msg').innerHTML =
+      '<div class="error">⚠️ A GitHub token is required to add simulations.<br>' +
+      'Enter it in the sidebar (Settings → Developer settings → Personal access tokens → repo scope).</div>';
+    return;
+  }
+
+  const btn = document.querySelector('[onclick="addSimulation()"]');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+
   const nextId = String(allSims.length + 1).padStart(3,'0');
   const exp    = document.getElementById('a-experiment').value;
   const proj   = document.getElementById('a-project').value;
-  const slug   = `${nextId}_${proj.replace(/\s+/g,'_').slice(0,20)}_${exp.replace(/\s+/g,'_')}`;
   const today  = new Date().toISOString().split('T')[0];
+  const slug   = `${nextId}_${proj.replace(/[^a-zA-Z0-9]/g,'_').slice(0,20)}_${exp.replace(/[^a-zA-Z0-9]/g,'_')}`;
 
   const sim = {
     id:                nextId,
@@ -576,31 +600,58 @@ function generateYaml() {
     },
     work_path: document.getElementById('a-path').value,
     notes:     document.getElementById('a-notes').value,
-    metadata: {
-      created_by: 'dashboard',
-      created_at: today,
-      updated_at: today,
-    }
+    metadata: { created_by: token ? 'dashboard' : 'unknown', created_at: today, updated_at: today }
   };
 
   const yamlText = jsyaml.dump(sim, { lineWidth: -1 });
-  document.getElementById('yaml-text').textContent = yamlText;
-  document.getElementById('yaml-output').style.display = 'block';
+  const filePath = `simulations/${slug}.yaml`;
+  const content  = btoa(unescape(encodeURIComponent(yamlText)));
 
-  document.getElementById('add-msg').innerHTML = `
-    <div class="success">
-      ✅ YAML generated for <b>${slug}.yaml</b><br>
-      Copy it and create a new file at:
-      <a href="https://github.com/${OWNER}/${REPO}/new/${BRANCH}/simulations" target="_blank">
-        github.com → simulations/ → Add file → Create new file
-      </a>
-      — paste the YAML, name the file <b>${slug}.yaml</b>, then commit.
-    </div>`;
-}
+  try {
+    const r = await fetch(
+      `https://api.github.com/repos/${OWNER}/${REPO}/contents/${filePath}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: `Add simulation ${nextId}: ${exp} — ${proj}`,
+          content,
+          branch: BRANCH,
+        })
+      }
+    );
 
-function copyYaml() {
-  navigator.clipboard.writeText(document.getElementById('yaml-text').textContent)
-    .then(() => alert('Copied to clipboard!'));
+    if (!r.ok) {
+      const err = await r.json();
+      throw new Error(err.message || r.status);
+    }
+
+    document.getElementById('add-msg').innerHTML =
+      `<div class="success">✅ Simulation <b>#${nextId}</b> saved to the repository!<br>
+       The dashboard will refresh in a few seconds…</div>`;
+
+    // Reset form fields
+    ['a-res','a-path','a-notes'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('a-spinup').value = 1999;
+    document.getElementById('a-start').value  = 2000;
+    document.getElementById('a-end').value    = 2009;
+    document.getElementById('a-cores').value  = 1536;
+    document.getElementById('a-rt').value     = 0;
+    document.getElementById('a-size').value   = 0;
+
+    // Reload data after short delay
+    setTimeout(() => { loadData(); }, 3000);
+
+  } catch(e) {
+    document.getElementById('add-msg').innerHTML =
+      `<div class="error">⚠️ Error saving: ${e.message}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '➕ Add simulation';
+  }
 }
 
 // ── Utils ─────────────────────────────────────────────────────────────────────

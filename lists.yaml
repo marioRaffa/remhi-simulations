@@ -14,7 +14,6 @@ status:
   - Completed
   - Ongoing
   - Planned
-  - NOT Planned
   - Paused
   - Failed
 
@@ -25,9 +24,12 @@ supercomputer:
 
 project:
   - FUTURA - CORDEX CORE
-  - EURO-CORDEX
+  - EUROCORDEX
+  - CORDEX FPS tbd
 
 domain:
+  - ITALY
+  - ALPS
   - EUR-CORDEX
   - AFR-CORDEX
   - NAM-CORDEX

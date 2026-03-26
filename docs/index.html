@@ -525,8 +525,6 @@ function renderTable(sims){
     const tr=document.createElement('tr');
     tr.className='row-clickable';
     tr.style.background=i%2===0?'#fff':'#fafbff';
-    const simIdx=allSims.indexOf(s);
-    tr.setAttribute('onclick',`openModalByIdx(${simIdx})`);
     tr.innerHTML=`
       <td><b style="color:#1F3864">${s.id||''}</b></td>
       <td>${s.project||''}</td>
@@ -583,7 +581,6 @@ function renderTable(sims){
   });
 }
 
-function openModalByIdx(i){openModal(allSims[i]);}
 function openModal(s){
   const c=s.compute||{}, p=s.period||{};
   const bg=STATUS_BG[s.status]||'#fff', fg=STATUS_COLORS[s.status]||'#000';
@@ -827,7 +824,6 @@ document.addEventListener('input',function(e){
 });
 
 function openEdit(filename,sha){
-  try{
   editingFile=filename;
   editingSha=sha; // will be refreshed at save time via ghGet
   const sim=allSims.find(s=>s._file===filename);
@@ -878,10 +874,6 @@ function openEdit(filename,sha){
   document.getElementById('save-btn').textContent='💾 Save changes';
   document.getElementById('form-msg').innerHTML='';
   document.getElementById('tab-btn-form').textContent='✏️ Edit simulation';
-  }catch(err){
-    showError('Error opening edit form: '+err.message+' — try reloading the page.');
-    console.error('openEdit error:',err);
-  }
 }
 
 function cancelForm(){
@@ -1004,9 +996,10 @@ async function saveSimulation(){
     setTimeout(()=>{
       editingFile=null;editingSha=null;
       document.getElementById('tab-btn-form').textContent='➕ Add simulation';
+      document.getElementById('form-msg').innerHTML='';
       loadData();
       showTab('database',document.getElementById('tab-btn-database'));
-    },2500);
+    },1500);
   }catch(e){
     document.getElementById('form-msg').innerHTML=`<div class="error">⚠️ Error: ${e.message}</div>`;
   }finally{btn.disabled=false;btn.textContent=isEdit?'💾 Save changes':'💾 Save';}
@@ -1029,12 +1022,18 @@ async function deleteSim(filename,sha,id){
     }
   }
   try{
+    // Optimistic UI update — remove from local array immediately
+    allSims=allSims.filter(s=>s._file!==filename);
+    applyFilters();
     // Fetch fresh SHA before delete
     let realSha=sha;
     try{ const d=await ghGet(`contents/simulations/${filename}?ref=${BRANCH}`); realSha=d.sha; }catch(_){}
     await ghDelete(`contents/simulations/${filename}`,realSha,`Delete simulation #${id}`);
-    await loadData();
-  }catch(e){alert(`Error deleting: ${e.message}`);}
+    await loadData(); // full reload confirms
+  }catch(e){
+    await loadData(); // restore on error
+    alert(`Error deleting: ${e.message}`);
+  }
 }
 
 function showTab(name,el){

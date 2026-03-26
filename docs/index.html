@@ -33,7 +33,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .tab.active{background:#1F3864;color:#fff;border-color:#1F3864}
 .tab-content{display:none}
 .tab-content.active{display:block}
-.kpi-row{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-bottom:16px}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px}
 .kpi{background:#fff;border-radius:10px;padding:14px 16px;border-left:4px solid;box-shadow:0 1px 3px rgba(0,0,0,.06)}
 .kpi-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
 .kpi-val{font-size:28px;font-weight:600}
@@ -484,24 +484,25 @@ function renderKPIs(sims){
   const totalST=sims.reduce((sum,s)=>{const r=calcProgress(s);return sum+(r.totalStorage||0);},0);
   const fmtCH=totalCH>1e6?(totalCH/1e6).toFixed(1)+'M':totalCH>1e3?(totalCH/1e3).toFixed(0)+'K':totalCH;
   const fmtST=totalST>1e6?(totalST/1e6).toFixed(1)+' PB':totalST>1e3?(totalST/1e3).toFixed(0)+' TB':totalST+' GB';
-  const kpiCards=[
-    ['Total sims',sims.length,'#1F3864','#D9E1F2'],
-    ['Completed',cnt('Completed'),'#375623','#E2EFDA'],
-    ['Ongoing',cnt('Ongoing'),'#4472C4','#D9E1F2'],
-    ['Planned',cnt('Planned'),'#BF8F00','#FFF2CC'],
-    ['NOT Planned',cnt('NOT Planned'),'#C00000','#FFDCE0'],
-  ];
-  const resourceCards=[
-    ['⚡ Total core-hrs',totalCH>0?fmtCH+' h':'—','#1F6B75','#E1F5EE'],
-    ['💾 Total storage',totalST>0?fmtST:'—','#375623','#E2EFDA'],
-  ];
-  document.getElementById('kpi-row').innerHTML=
-    kpiCards.map(([l,v,fg,bg])=>`<div class="kpi" style="border-color:${fg};background:${bg}">
-      <div class="kpi-label" style="color:${fg}">${l}</div>
-      <div class="kpi-val" style="color:${fg};font-size:22px">${v}</div></div>`).join('')+
-    resourceCards.map(([l,v,fg,bg])=>`<div class="kpi" style="border-color:${fg};background:${bg}">
-      <div class="kpi-label" style="color:${fg}">${l}</div>
-      <div class="kpi-val" style="color:${fg};font-size:20px">${v}</div></div>`).join('');
+  // Status cards: read from lists.yaml — no hardcoding
+  const statusCards=(lists['status']||[]).map(s=>{
+    const fg=STATUS_COLORS[s]||'#555';
+    const bg=STATUS_BG[s]||'#f0f0f0';
+    return `<div class="kpi" style="border-color:${fg};background:${bg}">
+      <div class="kpi-label" style="color:${fg}">${s}</div>
+      <div class="kpi-val" style="color:${fg};font-size:22px">${cnt(s)}</div></div>`;
+  }).join('');
+  const totalCard=`<div class="kpi" style="border-color:#1F3864;background:#D9E1F2">
+    <div class="kpi-label" style="color:#1F3864">Total sims</div>
+    <div class="kpi-val" style="color:#1F3864;font-size:22px">${sims.length}</div></div>`;
+  const resourceCards=`
+    <div class="kpi" style="border-color:#1F6B75;background:#E1F5EE">
+      <div class="kpi-label" style="color:#1F6B75">⚡ Total core-hrs</div>
+      <div class="kpi-val" style="color:#1F6B75;font-size:20px">${totalCH>0?fmtCH+' h':'—'}</div></div>
+    <div class="kpi" style="border-color:#375623;background:#E2EFDA">
+      <div class="kpi-label" style="color:#375623">💾 Total storage</div>
+      <div class="kpi-val" style="color:#375623;font-size:20px">${totalST>0?fmtST:'—'}</div></div>`;
+  document.getElementById('kpi-row').innerHTML=totalCard+statusCards+resourceCards;
 }
 
 function grp(sims,key){

@@ -169,7 +169,7 @@ tr:hover td{background:#fafbff}
     <div class="table-wrap">
       <table>
         <thead><tr>
-          <th>#</th><th>Project</th><th>Experiment</th><th>Domain</th>
+          <th title="IDs are permanent — gaps after deletion are expected">#</th><th>Project</th><th>Experiment</th><th>Domain</th>
           <th>Period</th><th>RCM</th><th>IC/LBC</th><th>Status</th>
           <th>Supercomputer</th><th>Cores</th><th>Size 1m [GB]</th><th>⚡ Total est.</th><th>💾 Total est. [GB]</th><th>👤 Added by</th><th>📧 Contact</th><th>🏁 Exp. completion</th><th>Actions</th>
         </tr></thead>
@@ -397,9 +397,9 @@ async function loadData(){
   if(saved) document.getElementById('gh-token').value=saved;
   try{
     const ld=await ghGet(`contents/lists.yaml?ref=${BRANCH}`);
-    lists=jsyaml.load(atob(ld.content.replace(/\n/g,'')));
+    lists=jsyaml.load(new TextDecoder().decode(Uint8Array.from(atob(ld.content.replace(/\n/g,'')),c=>c.charCodeAt(0))));
     // Use Trees API — single request for all files (avoids rate limits)
-    const tree=await ghGet(`git/trees/HEAD?recursive=1`);
+    const tree=await ghGet(`git/trees/HEAD?recursive=1&_=${Date.now()}`);
     const simBlobs=tree.tree.filter(f=>f.path.startsWith('simulations/')&&f.path.endsWith('.yaml')&&!f.path.endsWith('.gitkeep'));
     allSims=await Promise.all(simBlobs.map(async f=>{
       const d=await ghGet(`git/blobs/${f.sha}`);
@@ -775,6 +775,57 @@ function openAddForm(el){
   showTab('form',el||document.getElementById('tab-btn-form'));
 }
 
+function updateCphmPreview(){
+  const cores   = parseInt(document.getElementById('a-cores')?.value)||0;
+  const rt      = parseFloat(document.getElementById('a-rt')?.value)||0;
+  const sizepm  = parseFloat(document.getElementById('a-size')?.value)||0;
+  const startYear = parseInt(document.getElementById('a-start')?.value)||0;
+  const endYear   = parseInt(document.getElementById('a-end')?.value)||0;
+  const startDate = document.getElementById('a-actualstart')?.value;
+  const prev    = document.getElementById('cphm-preview');
+  const cphmDisplay = document.getElementById('a-cphm-display');
+  const cphm = (cores&&rt) ? Math.round(cores*rt) : 0;
+  if(cphmDisplay){
+    if(cphm>0){ cphmDisplay.textContent=cphm.toLocaleString()+' h'; cphmDisplay.style.color='#375623'; }
+    else { cphmDisplay.textContent='—'; cphmDisplay.style.color='#aaa'; }
+  }
+  if(!prev) return;
+  const totalYears=endYear-startYear+1;
+  const totalMonths=totalYears>0?totalYears*12:0;
+  if(totalMonths>0&&(cphm||sizepm)){
+    const totalCH=cphm?Math.round(cphm*totalMonths):null;
+    const totalST=sizepm?Math.round(sizepm*totalMonths):null;
+    let progressHtml='';
+    if(startDate&&totalMonths){
+      const today=new Date(), start=new Date(startDate);
+      const msPerMonth=1000*60*60*24*30.44;
+      const elapsed=Math.max(0,Math.min((today-start)/msPerMonth,totalMonths));
+      const pct=Math.min(100,Math.round((elapsed/totalMonths)*100));
+      const usedCH=cphm?Math.round(cphm*elapsed):null;
+      const usedST=sizepm?Math.round(sizepm*elapsed):null;
+      const color=pct>=100?'#375623':pct>=60?'#1F3864':pct>=30?'#854F0B':'#833C00';
+      progressHtml=`<div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(0,0,0,.08)">
+        <span style="font-weight:700;color:${color}">${pct}% elapsed (${Math.round(elapsed)}/${totalMonths} months)</span>
+        ${usedCH!=null?`<br>⚡ ${usedCH.toLocaleString()} / ${totalCH.toLocaleString()} core-hrs`:''}
+        ${usedST!=null?`<br>💾 ${usedST.toLocaleString()} / ${totalST.toLocaleString()} GB`:''}
+      </div>`;
+    }
+    prev.style.background='#f0f4ff'; prev.style.color='#1F3864';
+    prev.innerHTML=
+      `<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;color:#888">Analysis period: ${totalYears} yr / ${totalMonths} months</div>`+
+      (totalCH!=null?`<span style="font-weight:600">⚡ ${totalCH.toLocaleString()} core-hrs total</span><br>`:'')+
+      (totalST!=null?`<span style="font-weight:600">💾 ${totalST.toLocaleString()} GB total storage</span>`:'')+
+      progressHtml;
+  } else {
+    prev.style.background='#f4f6f9'; prev.style.color='#aaa';
+    prev.innerHTML='Enter Start year, End year, Cores and Run time 1month to see estimates';
+  }
+}
+
+document.addEventListener('input',function(e){
+  if(['a-cores','a-rt','a-size','a-start','a-end','a-actualstart'].includes(e.target.id)) updateCphmPreview();
+});
+
 function openEdit(filename,sha){
   try{
   editingFile=filename;
@@ -812,7 +863,6 @@ function openEdit(filename,sha){
   setVal('a-addedby',sim.added_by||ghUserName||'');
   setVal('a-email',sim.contact_email||'');
   setVal('a-deadline',sim.delivery_deadline||'');
-  setVal('a-nesttype',sim.nesting_type||(sim.parent_sim_id?'intermediate':'direct'));
   setVal('a-actualstart',sim.actual_start_date||'');
   setVal('a-mapurl',sim.domain_map_url||'');
   updateCphmPreview();
@@ -888,9 +938,9 @@ async function saveSimulation(){
   const today=new Date().toISOString().split('T')[0];
   const exp=document.getElementById('a-experiment').value;
   const proj=document.getElementById('a-project').value;
-  const existing=isEdit?allSims.find(s=>s._file===editingFile):null;
+  const existingSim=isEdit?allSims.find(s=>s._file===editingFile):null;
   const maxId=allSims.reduce((m,s)=>Math.max(m,parseInt(s.id)||0),0);
-  const nextId=isEdit?String(existing.id):String(maxId+1).padStart(3,'0');
+  const nextId=isEdit?String(existingSim.id):String(maxId+1).padStart(3,'0');
   const sim={
     id:nextId,project:proj,experiment:exp,
     domain:document.getElementById('a-domain').value,
@@ -926,15 +976,15 @@ async function saveSimulation(){
     delivery_deadline:document.getElementById('a-deadline').value||null,
     domain_map_url:document.getElementById('a-mapurl').value||null,
     metadata:{
-      created_by:existing?.metadata?.created_by||ghUserLogin||ghUserName||'dashboard',
-      created_at:existing?.metadata?.created_at||today,
+      created_by:existingSim?.metadata?.created_by||ghUserLogin||ghUserName||'dashboard',
+      created_at:existingSim?.metadata?.created_at||today,
       updated_at:today,
       updated_by:ghUserLogin||ghUserName||null
     }
   };
   const slug=isEdit
     ?editingFile.replace('.yaml','')
-    :`${nextId}_${proj.replace(/[^a-zA-Z0-9]/g,'_').slice(0,20)}_${exp.replace(/[^a-zA-Z0-9]/g,'_')}`;
+    :`${nextId}_${proj.replace(/[^a-zA-Z0-9]/g,'_').slice(0,20)}_${exp.replace(/[^a-zA-Z0-9]/g,'_')}_${Date.now()}`;
   const filePath=`simulations/${slug}.yaml`;
   const yamlStr=jsyaml.dump(sim,{lineWidth:-1});
     const content=btoa(encodeURIComponent(yamlStr).replace(/%([0-9A-Fa-f]{2})/g,(_,p)=>String.fromCharCode(parseInt(p,16))));
@@ -968,11 +1018,15 @@ async function deleteSim(filename,sha,id){
   if(!token){alert('GitHub token required in the sidebar.');return;}
   // Soft permission check
   const sim=allSims.find(s=>s._file===filename);
-  if(sim&&sim.added_by&&ghUserName&&
-     sim.added_by.toLowerCase()!==ghUserName.toLowerCase()&&
-     sim.metadata?.created_by?.toLowerCase()!==ghUserName.toLowerCase()){
-    alert('Permission denied: only '+sim.added_by+' can delete this simulation.');
-    return;
+  if(sim&&sim.added_by&&ghUserName){
+    const _a=sim.added_by.toLowerCase().replace(/\s/g,'');
+    const _c=(sim.metadata?.created_by||'').toLowerCase().replace(/\s/g,'');
+    const _n=ghUserName.toLowerCase().replace(/\s/g,'');
+    const _l=ghUserLogin.toLowerCase().replace(/\s/g,'');
+    if(_a!==_n&&_a!==_l&&_c!==_n&&_c!==_l){
+      alert('Permission denied: only '+sim.added_by+' can delete this simulation.');
+      return;
+    }
   }
   try{
     // Fetch fresh SHA before delete
@@ -1005,8 +1059,6 @@ document.addEventListener('keydown',e=>{
     document.body.style.overflow='';
   }
 });
-
-// Core-hrs live preview
 
 
 

@@ -886,11 +886,12 @@ async function saveSimulation(){
       const cb=existing.metadata?.created_by?.toLowerCase()||'';
       const un=ghUserName.toLowerCase(), ul=ghUserLogin.toLowerCase();
       if(ab!==un&&ab!==ul&&cb!==un&&cb!==ul){
-      document.getElementById('form-msg').innerHTML=
-        '<div class="error">⚠️ Permission denied: only <b>'+existing.added_by+'</b> can edit this simulation.</div>';
+        document.getElementById('form-msg').innerHTML=
+          '<div class="error">⚠️ Permission denied: only <b>'+existing.added_by+'</b> can edit this simulation.</div>';
         return;
       }
     }
+  }
   const btn=document.getElementById('save-btn');
   btn.disabled=true; btn.textContent='Saving…';
   const isEdit=!!editingFile;

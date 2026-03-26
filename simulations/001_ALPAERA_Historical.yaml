@@ -1,0 +1,32 @@
+id: '001'
+project: ALPAERA
+experiment: Historical
+domain: ALPS
+spatial_resolution: 0.11 deg - 12 km
+period:
+  spin_up: 2009
+  start: 2010
+  end: 2019
+rcm_model: CCLM
+ic_lbc: EC-Earth3-CC
+status: Completed
+compute:
+  supercomputer: Cassandra
+  cores: 1296
+  timestep_s: 25
+  relaxation_zone_pts: 23
+  run_time_1month_h: 12
+  output_frequency: 1 hr - 3 hr - 6 hr
+  size_1month_gb: 25
+actual_start_date: null
+work_path: ''
+notes: ''
+added_by: marioRaffa
+contact_email: mario.raffa@cmcc.it
+delivery_deadline: null
+domain_map_url: null
+metadata:
+  created_by: marioRaffa
+  created_at: '2026-03-26'
+  updated_at: '2026-03-26'
+  updated_by: marioRaffa

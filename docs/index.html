@@ -525,6 +525,8 @@ function renderTable(sims){
     const tr=document.createElement('tr');
     tr.className='row-clickable';
     tr.style.background=i%2===0?'#fff':'#fafbff';
+    const simIdx=allSims.indexOf(s);
+    tr.setAttribute('onclick',`openModalByIdx(${simIdx})`);
     tr.innerHTML=`
       <td><b style="color:#1F3864">${s.id||''}</b></td>
       <td>${s.project||''}</td>
@@ -554,34 +556,25 @@ function renderTable(sims){
       <td style="white-space:nowrap">${s.delivery_deadline
         ?`<span style="background:#FFF2CC;color:#BF8F00;padding:2px 7px;border-radius:10px;font-weight:600;font-size:11px">${s.delivery_deadline}</span>`
         :''}</td>
-      <td style="white-space:nowrap" onclick="event.stopPropagation()">
-        <button class="action-btn btn-edit" data-file="${s._file}" data-sha="${s._sha}" data-id="${s.id||''}">✏️ Edit</button>
-        <button class="action-btn btn-del"  data-file="${s._file}" data-sha="${s._sha}" data-id="${s.id||''}">🗑️</button>
+      <td style="white-space:nowrap">
+        <button class="action-btn btn-edit" onclick="openEdit('${s._file}','${s._sha}')">✏️ Edit</button>
+        <button class="action-btn btn-del"  onclick="deleteSim('${s._file}','${s._sha}','${s.id||''}')">🗑️</button>
       </td>`;
-    // Soft permission: only added_by user can edit/delete
-    // Soft permission: allow edit if no token, or if user matches added_by or created_by
+    // Soft permission check
     const _ab=(s.added_by||'').toLowerCase().replace(/\s/g,'');
     const _cb=(s.metadata?.created_by||'').toLowerCase().replace(/\s/g,'');
     const _un=ghUserName.toLowerCase().replace(/\s/g,'');
     const _ul=ghUserLogin.toLowerCase().replace(/\s/g,'');
     const canEdit=!ghUserName||!s.added_by||_ab===_un||_ab===_ul||_cb===_un||_cb===_ul;
-    const editBtn = tr.querySelector('.btn-edit');
-    const delBtn  = tr.querySelector('.btn-del');
     if(!canEdit){
-      editBtn.disabled=true;
-      editBtn.title='Only '+s.added_by+' can edit this simulation';
-      editBtn.style.cssText='opacity:.35;cursor:not-allowed;background:#f0f0f0;color:#aaa;border-color:#ddd';
-      delBtn.disabled=true;
-      delBtn.title='Only '+s.added_by+' can delete this simulation';
-      delBtn.style.cssText='opacity:.35;cursor:not-allowed;background:#f0f0f0;color:#aaa;border-color:#ddd';
-    } else {
-      editBtn.removeAttribute('disabled');
-      delBtn.removeAttribute('disabled');
+      tr.querySelectorAll('.btn-edit,.btn-del').forEach(b=>{
+        b.disabled=true;
+        b.title='Only '+s.added_by+' can modify this';
+        b.style.cssText='opacity:.35;cursor:not-allowed;background:#f0f0f0;color:#aaa;border-color:#ddd';
+        b.setAttribute('onclick','');
+      });
     }
-    tr.setAttribute('data-file', s._file);
-    tr.setAttribute('data-sha',  s._sha);
-    tr.setAttribute('data-id',   s.id||'');
-    tbody.appendChild(tr); // click handled by delegated listener
+    tbody.appendChild(tr);
     // Fill totals
     const rp=calcProgress(s);
     const na='<span style="color:#ccc">—</span>';
@@ -590,6 +583,7 @@ function renderTable(sims){
   });
 }
 
+function openModalByIdx(i){openModal(allSims[i]);}
 function openModal(s){
   const c=s.compute||{}, p=s.period||{};
   const bg=STATUS_BG[s.status]||'#fff', fg=STATUS_COLORS[s.status]||'#000';
@@ -1002,26 +996,7 @@ function showError(msg){
 loadData();
 
 // ── Single delegated listener for table interactions ──────────────────────
-document.addEventListener('click', function(e){
-  const btn = e.target.closest('button.btn-edit, button.btn-del');
-  if(btn){
-    e.stopPropagation();
-    const file = btn.dataset.file;
-    const sha  = btn.dataset.sha;
-    const id   = btn.dataset.id;
-    if(!file) return;
-    if(btn.disabled) return;
-    if(btn.classList.contains('btn-edit')) openEdit(file, sha);
-    else deleteSim(file, sha, id);
-    return;
-  }
-  // Row click → modal
-  const tr = e.target.closest('tr[data-file]');
-  if(tr && !e.target.closest('td[onclick]') && !e.target.closest('a')){
-    const sim = allSims.find(s => s._file === tr.dataset.file);
-    if(sim) openModal(sim);
-  }
-});
+
 
 // Close modal on Escape
 document.addEventListener('keydown',e=>{

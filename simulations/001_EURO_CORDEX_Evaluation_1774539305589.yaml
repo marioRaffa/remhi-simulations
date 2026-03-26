@@ -19,7 +19,7 @@ compute:
   relaxation_zone_pts: 23
   run_time_1month_h: 2
   output_frequency: 1 hr - 3 hr - 6 hr
-  size_1month_gb: null
+  size_1month_gb: 12
 actual_start_date: '2025-01-01'
 work_path: ''
 notes: CCLM 6-0-1 + TERRA URB

@@ -33,7 +33,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .tab.active{background:#1F3864;color:#fff;border-color:#1F3864}
 .tab-content{display:none}
 .tab-content.active{display:block}
-.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px}
+.kpi-row{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-bottom:16px}
 .kpi{background:#fff;border-radius:10px;padding:14px 16px;border-left:4px solid;box-shadow:0 1px 3px rgba(0,0,0,.06)}
 .kpi-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
 .kpi-val{font-size:28px;font-weight:600}
@@ -155,10 +155,14 @@ tr:hover td{background:#fafbff}
         <div style="position:relative;height:220px"><canvas id="c-project"></canvas></div></div>
     </div>
     <div class="charts-row3">
-      <div class="chart-card"><h3>By supercomputer</h3>
-        <div style="position:relative;height:190px"><canvas id="c-sc"></canvas></div></div>
-      <div class="chart-card"><h3>By experiment</h3>
+<div class="chart-card"><h3>By experiment</h3>
         <div style="position:relative;height:190px"><canvas id="c-exp"></canvas></div></div>
+      <div class="chart-card"><h3>By domain</h3>
+        <div style="position:relative;height:190px"><canvas id="c-domain"></canvas></div></div>
+    </div>
+    <div class="charts-row3" style="margin-top:14px">
+      <div class="chart-card"><h3>By RCM model</h3>
+        <div style="position:relative;height:190px"><canvas id="c-rcm"></canvas></div></div>
       <div class="chart-card"><h3>By IC/LBC</h3>
         <div style="position:relative;height:190px"><canvas id="c-lbc"></canvas></div></div>
     </div>
@@ -475,13 +479,29 @@ function applyFilters(){
 
 function renderKPIs(sims){
   const cnt=s=>sims.filter(x=>x.status===s).length;
-  document.getElementById('kpi-row').innerHTML=[
-    ['Total',sims.length,'#1F3864','#D9E1F2'],['Completed',cnt('Completed'),'#375623','#E2EFDA'],
-    ['Ongoing',cnt('Ongoing'),'#1F3864','#D9E1F2'],['Planned',cnt('Planned'),'#BF8F00','#FFF2CC'],
-    ['NOT Planned',cnt('NOT Planned'),'#C00000','#FFDCE0']
-  ].map(([l,v,fg,bg])=>`<div class="kpi" style="border-color:${fg};background:${bg}">
-    <div class="kpi-label" style="color:${fg}">${l}</div>
-    <div class="kpi-val" style="color:${fg}">${v}</div></div>`).join('');
+  // Aggregate compute resources
+  const totalCH=sims.reduce((sum,s)=>{const r=calcProgress(s);return sum+(r.totalCorehours||0);},0);
+  const totalST=sims.reduce((sum,s)=>{const r=calcProgress(s);return sum+(r.totalStorage||0);},0);
+  const fmtCH=totalCH>1e6?(totalCH/1e6).toFixed(1)+'M':totalCH>1e3?(totalCH/1e3).toFixed(0)+'K':totalCH;
+  const fmtST=totalST>1e6?(totalST/1e6).toFixed(1)+' PB':totalST>1e3?(totalST/1e3).toFixed(0)+' TB':totalST+' GB';
+  const kpiCards=[
+    ['Total sims',sims.length,'#1F3864','#D9E1F2'],
+    ['Completed',cnt('Completed'),'#375623','#E2EFDA'],
+    ['Ongoing',cnt('Ongoing'),'#4472C4','#D9E1F2'],
+    ['Planned',cnt('Planned'),'#BF8F00','#FFF2CC'],
+    ['NOT Planned',cnt('NOT Planned'),'#C00000','#FFDCE0'],
+  ];
+  const resourceCards=[
+    ['⚡ Total core-hrs',totalCH>0?fmtCH+' h':'—','#1F6B75','#E1F5EE'],
+    ['💾 Total storage',totalST>0?fmtST:'—','#375623','#E2EFDA'],
+  ];
+  document.getElementById('kpi-row').innerHTML=
+    kpiCards.map(([l,v,fg,bg])=>`<div class="kpi" style="border-color:${fg};background:${bg}">
+      <div class="kpi-label" style="color:${fg}">${l}</div>
+      <div class="kpi-val" style="color:${fg};font-size:22px">${v}</div></div>`).join('')+
+    resourceCards.map(([l,v,fg,bg])=>`<div class="kpi" style="border-color:${fg};background:${bg}">
+      <div class="kpi-label" style="color:${fg}">${l}</div>
+      <div class="kpi-val" style="color:${fg};font-size:20px">${v}</div></div>`).join('');
 }
 
 function grp(sims,key){
@@ -495,20 +515,26 @@ function mkChart(id,type,labels,data,colors){
   charts[id]=new Chart(ctx,{type,data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:0}]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:type==='doughnut',position:'bottom',labels:{font:{size:11},boxWidth:12}}},
-      scales:type!=='doughnut'?{x:{ticks:{font:{size:10}}},y:{ticks:{font:{size:10}},beginAtZero:true}}:{},
+      scales:type!=='doughnut'?{
+        x:{ticks:{font:{size:10}}},
+        y:{ticks:{font:{size:10},stepSize:1,callback:v=>Number.isInteger(v)?v:''},beginAtZero:true,min:0}
+      }:{},
       cutout:type==='doughnut'?'55%':undefined}});
 }
 function renderCharts(sims){
+  const PALETTE=['#4472C4','#70AD47','#ED7D31','#9E3FBF','#C00000','#BF8F00','#1F6B75','#C55A11','#808080'];
   const sg=grp(sims,'status');
   mkChart('c-status','doughnut',Object.keys(sg),Object.values(sg),Object.keys(sg).map(k=>STATUS_COLORS[k]||'#aaa'));
   const pg=grp(sims,'project');
-  mkChart('c-project','bar',Object.keys(pg),Object.values(pg),['#4472C4','#70AD47','#ED7D31','#9E3FBF']);
-  const scg=grp(sims,'supercomputer');
-  mkChart('c-sc','bar',Object.keys(scg),Object.values(scg),['#ED7D31','#4472C4','#70AD47','#9E3FBF']);
+  mkChart('c-project','bar',Object.keys(pg),Object.values(pg),PALETTE);
   const eg=grp(sims,'experiment');
-  mkChart('c-exp','bar',Object.keys(eg),Object.values(eg),['#4472C4','#70AD47','#ED7D31','#9E3FBF','#C00000','#BF8F00']);
+  mkChart('c-exp','bar',Object.keys(eg),Object.values(eg),PALETTE);
+  const dg=grp(sims,'domain');
+  mkChart('c-domain','bar',Object.keys(dg),Object.values(dg),PALETTE);
+  const rg=grp(sims,'rcm_model');
+  mkChart('c-rcm','bar',Object.keys(rg),Object.values(rg),['#4472C4','#70AD47']);
   const lg=grp(sims,'ic_lbc');
-  mkChart('c-lbc','bar',Object.keys(lg),Object.values(lg),['#1F6B75','#4472C4','#70AD47','#ED7D31','#9E3FBF']);
+  mkChart('c-lbc','bar',Object.keys(lg),Object.values(lg),PALETTE);
 }
 
 function renderTable(sims){

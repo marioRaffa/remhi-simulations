@@ -14,6 +14,7 @@ status:
   - Completed
   - Ongoing
   - Planned
+  - NOT Planned
   - Paused
   - Failed
 
@@ -23,13 +24,10 @@ supercomputer:
   - Other Cluster
 
 project:
-  - ALPAERA 
-  - FUTURA / CORDEX CORE
-  - EUROCORDEX
+  - FUTURA - CORDEX CORE
+  - EURO-CORDEX
 
 domain:
-  - ALPS
-  - ITALY
   - EUR-CORDEX
   - AFR-CORDEX
   - NAM-CORDEX
@@ -46,7 +44,7 @@ domain:
   - ANT-CORDEX
 
 rcm_model:
-  - CCLM 6-0-1
+  - CCLM
   - ICLM
 
 # IC/LBC for Evaluation experiment → reanalysis only

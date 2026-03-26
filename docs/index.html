@@ -780,6 +780,7 @@ function openAddForm(el){
 }
 
 function openEdit(filename,sha){
+  try{
   editingFile=filename;
   editingSha=sha; // will be refreshed at save time via ghGet
   const sim=allSims.find(s=>s._file===filename);
@@ -787,6 +788,9 @@ function openEdit(filename,sha){
     showError('Simulation not found in cache — click 🔄 Reload and try again.');
     return;
   }
+  // Switch to form tab immediately — visible before any field population
+  showTab('form',document.getElementById('tab-btn-form'));
+  window.scrollTo(0,0);
   const c=sim.compute||{},p=sim.period||{};
   populateFormDropdowns();
   setVal('a-project',sim.project);
@@ -828,8 +832,10 @@ function openEdit(filename,sha){
   document.getElementById('save-btn').textContent='💾 Save changes';
   document.getElementById('form-msg').innerHTML='';
   document.getElementById('tab-btn-form').textContent='✏️ Edit simulation';
-  showTab('form',document.getElementById('tab-btn-form'));
-  window.scrollTo(0,0);
+  }catch(err){
+    showError('Error opening edit form: '+err.message+' — try reloading the page.');
+    console.error('openEdit error:',err);
+  }
 }
 
 function cancelForm(){

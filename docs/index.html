@@ -171,9 +171,9 @@ tr:hover td{background:#fafbff}
         <thead><tr>
           <th>#</th><th>Project</th><th>Experiment</th><th>Domain</th>
           <th>Period</th><th>RCM</th><th>IC/LBC</th><th>Status</th>
-          <th>Supercomputer</th><th>Cores</th><th>Size 1m [GB]</th><th>📊 Progress</th><th>⚡ Core-hrs used</th><th>⚡ Total est.</th><th>💾 Total est. [GB]</th><th>👤 Added by</th><th>📧 Contact</th><th>🏁 Exp. completion</th><th>Actions</th>
+          <th>Supercomputer</th><th>Cores</th><th>Size 1m [GB]</th><th>📊 Progress</th><th>⚡ Total est.</th><th>💾 Total est. [GB]</th><th>👤 Added by</th><th>📧 Contact</th><th>🏁 Exp. completion</th><th>Actions</th>
         </tr></thead>
-        <tbody id="db-body"><tr><td colspan="19" class="loading">Loading…</td></tr></tbody>
+        <tbody id="db-body"><tr><td colspan="18" class="loading">Loading…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -245,7 +245,7 @@ tr:hover td{background:#fafbff}
       </div>
       <div class="form-grid" style="margin-bottom:14px">
         <div class="field" style="grid-column:span 3">
-          <label style="font-size:11px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px">📈 Period estimates</label>
+          <label style="font-size:11px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px">📈 Analysis period</label>
           <div id="cphm-preview" style="background:#f4f6f9;border-radius:6px;padding:10px 14px;font-size:11px;color:#aaa;line-height:1.7">
             Enter period + core-hrs/month to see estimates
           </div>
@@ -257,8 +257,10 @@ tr:hover td{background:#fafbff}
       <div class="form-section" style="color:#1F3864;border-color:#c0cfe8">Responsibility & scheduling</div>
       <div class="form-grid">
         <div class="field">
-          <label>👤 Added by <span style="color:#C00000">*</span></label>
-          <input type="text" id="a-addedby" placeholder="Full name">
+          <label>👤 Added by</label>
+          <input type="text" id="a-addedby" readonly
+            style="background:#f0f4ff;color:#1F3864;font-weight:600;border-color:#c0cfe8;cursor:default"
+            placeholder="Auto-filled from GitHub token">
         </div>
         <div class="field">
           <label>📧 Contact email <span style="color:#C00000">*</span></label>
@@ -304,7 +306,8 @@ const OWNER='marioRaffa', REPO='remhi-simulations', BRANCH='main';
 // ── Progress & core-hours calculator ──────────────────────────────────────
 function calcProgress(s){
   const p=s.period||{};
-  const totalMonths=(((p.end||0)-(p.start||0))*12)||null;
+  const totalYears=((p.end||0)-(p.start||0)+1)||null;
+  const totalMonths=totalYears?totalYears*12:null;
   const cphm=calcCorehoursPerMonth(s);
   const sizepm=s.compute?.size_1month_gb||null;
   const totalCorehours=cphm&&totalMonths?Math.round(cphm*totalMonths):null;
@@ -323,6 +326,11 @@ function calcProgress(s){
   const estimatedEnd=estEnd.toISOString().split('T')[0];
   return {pct,monthsElapsed:Math.round(monthsElapsed*10)/10,totalMonths,
           corehoursUsed,storageUsed,totalCorehours,totalStorage,estimatedEnd};
+}
+
+function totalYears(s){
+  const p=s.period||{};
+  return (p.end&&p.start)?(p.end-p.start+1):null;
 }
 
 // Auto-calculate core-hrs/month from cores × run_time_1month_h
@@ -369,7 +377,7 @@ async function ghDelete(path,sha,msg){
 async function loadData(){
   showError('');
   document.getElementById('sim-count').textContent='Loading…';
-  document.getElementById('db-body').innerHTML='<tr><td colspan="19" class="loading">Loading simulations…</td></tr>';
+  document.getElementById('db-body').innerHTML='<tr><td colspan="18" class="loading">Loading simulations…</td></tr>';
   const saved=localStorage.getItem('gh_token');
   if(saved) document.getElementById('gh-token').value=saved;
   try{
@@ -488,7 +496,7 @@ function renderCharts(sims){
 function renderTable(sims){
   if(!sims.length){
     document.getElementById('db-body').innerHTML=
-      '<tr><td colspan="19" style="text-align:center;padding:30px;color:#aaa">No simulations match the filters</td></tr>';
+      '<tr><td colspan="18" style="text-align:center;padding:30px;color:#aaa">No simulations match the filters</td></tr>';
     return;
   }
   const tbody=document.getElementById('db-body');
@@ -512,7 +520,6 @@ function renderTable(sims){
       <td style="text-align:right">${c.cores||''}</td>
       <td style="text-align:right">${c.size_1month_gb||''}</td>
       <td id="prog-${s.id||i}"></td>
-      <td id="chused-${s.id||i}" style="font-size:11px;text-align:right"></td>
       <td id="chtot-${s.id||i}" style="font-size:11px;text-align:right;color:#1F3864"></td>
       <td id="sttot-${s.id||i}" style="font-size:11px;text-align:right;color:#1F3864"></td>
       <td style="font-size:11px">${s.added_by||'<span style="color:#ccc">—</span>'}</td>
@@ -557,7 +564,6 @@ function renderTable(sims){
       }
     }
     const na='<span style="color:#ccc">—</span>';
-    const ch=document.getElementById(`chused-${s.id||i}`); if(ch) ch.innerHTML=rp.corehoursUsed!==null?rp.corehoursUsed.toLocaleString()+' h':na;
     const ct=document.getElementById(`chtot-${s.id||i}`);  if(ct) ct.innerHTML=rp.totalCorehours!==null?'<b>'+rp.totalCorehours.toLocaleString()+'</b> h':na;
     const st=document.getElementById(`sttot-${s.id||i}`);  if(st) st.innerHTML=rp.totalStorage!==null?'<b>'+rp.totalStorage.toLocaleString()+'</b>':na;
   });
@@ -606,7 +612,7 @@ function openModal(s){
             </div>
           </div></div>
         <div class="mi span3" style="background:#f0f4ff;border-radius:8px;padding:12px 14px;line-height:1.8">
-          <label>Full period estimates (${r.totalMonths} months)</label>
+          <label>Analysis period: ${totalYears(s)} yr / ${r.totalMonths} months</label>
           <span>${[
             r.totalCorehours!=null?'⚡ '+r.totalCorehours.toLocaleString()+' core-hrs total':null,
             r.totalStorage!=null?'💾 '+r.totalStorage.toLocaleString()+' GB total':null,
@@ -701,7 +707,7 @@ function openAddForm(el){
   setVal('a-spinup','');setVal('a-start','');setVal('a-end','');
   setVal('a-cores','');setVal('a-rt','');setVal('a-size','');
   setVal('a-res','');
-  setVal('a-addedby',ghUserName); // restore cached GitHub username
+  setVal('a-addedby',ghUserName||''); // always auto from GitHub
   setVal('a-email','');
   setVal('a-actualstart','');
   setVal('a-deadline','');
@@ -738,7 +744,7 @@ async function openEdit(filename,sha){
   setVal('a-sc',c.supercomputer);
   setVal('a-cores',c.cores);setVal('a-rt',c.run_time_1month_h||c.run_time_1yr_h);setVal('a-size',c.size_1month_gb);
   setVal('a-path',sim.work_path);setVal('a-notes',sim.notes);
-  setVal('a-addedby',sim.added_by||'');
+  setVal('a-addedby',sim.added_by||ghUserName||'');
   setVal('a-email',sim.contact_email||'');
   setVal('a-deadline',sim.delivery_deadline||'');
   setVal('a-actualstart',sim.actual_start_date||'');
@@ -776,7 +782,7 @@ async function saveSimulation(){
   const required=[
     ['a-project','Project'],['a-experiment','Experiment'],['a-domain','Domain'],
     ['a-status','Status'],['a-sc','Supercomputer'],
-    ['a-addedby','Added by'],['a-email','Contact email'],
+    ['a-email','Contact email'],
     ['a-lbc','IC/LBC']
   ];
   for(const [id,label] of required){
@@ -826,7 +832,7 @@ async function saveSimulation(){
     actual_start_date:document.getElementById('a-actualstart').value||null,
     work_path:document.getElementById('a-path').value,
     notes:document.getElementById('a-notes').value,
-    added_by:document.getElementById('a-addedby').value||null,
+    added_by:ghUserName||document.getElementById('a-addedby').value||null,
     contact_email:document.getElementById('a-email').value||null,
     delivery_deadline:document.getElementById('a-deadline').value||null,
     domain_map_url:document.getElementById('a-mapurl').value||null,

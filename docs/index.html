@@ -171,9 +171,9 @@ tr:hover td{background:#fafbff}
         <thead><tr>
           <th>#</th><th>Project</th><th>Experiment</th><th>Domain</th>
           <th>Period</th><th>RCM</th><th>IC/LBC</th><th>Status</th>
-          <th>Supercomputer</th><th>Cores</th><th>Size 1m [GB]</th><th>📊 Progress</th><th>⚡ Total est.</th><th>💾 Total est. [GB]</th><th>👤 Added by</th><th>📧 Contact</th><th>🏁 Exp. completion</th><th>Actions</th>
+          <th>Supercomputer</th><th>Cores</th><th>Size 1m [GB]</th><th>⚡ Total est.</th><th>💾 Total est. [GB]</th><th>👤 Added by</th><th>📧 Contact</th><th>🏁 Exp. completion</th><th>Actions</th>
         </tr></thead>
-        <tbody id="db-body"><tr><td colspan="18" class="loading">Loading…</td></tr></tbody>
+        <tbody id="db-body"><tr><td colspan="17" class="loading">Loading…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -392,7 +392,7 @@ async function ghDelete(path,sha,msg){
 async function loadData(){
   showError('');
   document.getElementById('sim-count').textContent='Loading…';
-  document.getElementById('db-body').innerHTML='<tr><td colspan="18" class="loading">Loading simulations…</td></tr>';
+  document.getElementById('db-body').innerHTML='<tr><td colspan="17" class="loading">Loading simulations…</td></tr>';
   const saved=localStorage.getItem('gh_token');
   if(saved) document.getElementById('gh-token').value=saved;
   try{
@@ -414,9 +414,7 @@ async function loadData(){
     allSims.sort((a,b)=>String(a.id||'').localeCompare(String(b.id||'')));
     populateFilters(); populateFormDropdowns(); applyFilters();
     document.getElementById('last-refresh').textContent='Updated: '+new Date().toLocaleTimeString();
-    // Update sidebar with username context
-    const sbBottom=document.getElementById('last-refresh');
-    if(ghUserName) sbBottom.textContent+=' · 👤 '+(ghUserLogin||ghUserName);
+
     // Try to prefill Added by from GitHub API
     try{
       const token=getToken();
@@ -430,6 +428,10 @@ async function loadData(){
           ghUserLogin=u.login||'';
           const addedByEl=document.getElementById('a-addedby');
           if(addedByEl&&!addedByEl.value) addedByEl.value=ghUserName;
+          // Re-render table now that we know the user — fixes Edit button permissions
+          applyFilters();
+          const sb=document.getElementById('last-refresh');
+          if(sb) sb.textContent='Updated: '+new Date().toLocaleTimeString()+' · 👤 '+(ghUserLogin||ghUserName);
         }
       }
     }catch(_){}
@@ -512,7 +514,7 @@ function renderCharts(sims){
 function renderTable(sims){
   if(!sims.length){
     document.getElementById('db-body').innerHTML=
-      '<tr><td colspan="18" style="text-align:center;padding:30px;color:#aaa">No simulations match the filters</td></tr>';
+      '<tr><td colspan="17" style="text-align:center;padding:30px;color:#aaa">No simulations match the filters</td></tr>';
     return;
   }
   const tbody=document.getElementById('db-body');
@@ -542,7 +544,6 @@ function renderTable(sims){
       <td>${c.supercomputer||''}</td>
       <td style="text-align:right">${c.cores||''}</td>
       <td style="text-align:right">${c.size_1month_gb||''}</td>
-      <td id="prog-${s.id||i}"></td>
       <td id="chtot-${s.id||i}" style="font-size:11px;text-align:right;color:#1F3864"></td>
       <td id="sttot-${s.id||i}" style="font-size:11px;text-align:right;color:#1F3864"></td>
       <td style="font-size:11px">${s.added_by||'<span style="color:#ccc">—</span>'}</td>
@@ -558,13 +559,12 @@ function renderTable(sims){
         <button class="action-btn btn-del" title="Delete">🗑️</button>
       </td>`;
     // Soft permission: only added_by user can edit/delete
-    const canEdit = !s.added_by || !ghUserName || (()=>{
-      const ab=s.added_by.toLowerCase();
-      const cb=s.metadata?.created_by?.toLowerCase()||'';
-      const un=ghUserName.toLowerCase();
-      const ul=ghUserLogin.toLowerCase();
-      return ab===un||ab===ul||cb===un||cb===ul;
-    })();
+    // Soft permission: allow edit if no token, or if user matches added_by or created_by
+    const _ab=(s.added_by||'').toLowerCase().replace(/\s/g,'');
+    const _cb=(s.metadata?.created_by||'').toLowerCase().replace(/\s/g,'');
+    const _un=ghUserName.toLowerCase().replace(/\s/g,'');
+    const _ul=ghUserLogin.toLowerCase().replace(/\s/g,'');
+    const canEdit=!ghUserName||!s.added_by||_ab===_un||_ab===_ul||_cb===_un||_cb===_ul;
     const editBtn = tr.querySelector('.btn-edit');
     const delBtn  = tr.querySelector('.btn-del');
     if(!canEdit){
@@ -580,19 +580,11 @@ function renderTable(sims){
     }
     tr.addEventListener('click',()=>openModal(s));
     tbody.appendChild(tr);
-    // Fill progress cells — single calcProgress call per row
+    // Fill totals
     const rp=calcProgress(s);
-    const progCell=document.getElementById(`prog-${s.id||i}`);
-    if(progCell){
-      if(rp.pct===null){ progCell.innerHTML='<span style="color:#ccc;font-size:11px">—</span>'; }
-      else{
-        const col=rp.pct>=100?'#70AD47':rp.pct>=60?'#4472C4':rp.pct>=30?'#BF8F00':'#ED7D31';
-        progCell.innerHTML=`<div><div class="pbar-wrap"><div class="pbar-fill" style="width:${Math.min(rp.pct,100)}%;background:${col}"></div></div><div class="pbar-label" style="color:${col}">${rp.pct}% <span style="font-weight:400;color:#aaa">(${rp.monthsCompleted}/${rp.totalMonths}m)</span></div></div>`;
-      }
-    }
     const na='<span style="color:#ccc">—</span>';
-    const ct=document.getElementById(`chtot-${s.id||i}`);  if(ct) ct.innerHTML=rp.totalCorehours!==null?'<b>'+rp.totalCorehours.toLocaleString()+'</b> h':na;
-    const st=document.getElementById(`sttot-${s.id||i}`);  if(st) st.innerHTML=rp.totalStorage!==null?'<b>'+rp.totalStorage.toLocaleString()+'</b>':na;
+    const ct=document.getElementById(`chtot-${s.id||i}`);if(ct)ct.innerHTML=rp.totalCorehours!==null?'<b>'+rp.totalCorehours.toLocaleString()+'</b> h':na;
+    const st=document.getElementById(`sttot-${s.id||i}`);if(st)st.innerHTML=rp.totalStorage!==null?'<b>'+rp.totalStorage.toLocaleString()+'</b>':na;
   });
 }
 
@@ -787,16 +779,12 @@ function openAddForm(el){
   showTab('form',el||document.getElementById('tab-btn-form'));
 }
 
-async function openEdit(filename,sha){
+function openEdit(filename,sha){
   editingFile=filename;
-  // Fetch fresh file SHA for the PUT operation
-  try{
-    const d=await ghGet(`contents/simulations/${filename}?ref=${BRANCH}`);
-    editingSha=d.sha;
-  }catch(_){ editingSha=sha; }
+  editingSha=sha; // will be refreshed at save time via ghGet
   const sim=allSims.find(s=>s._file===filename);
   if(!sim){
-    showError('Simulation file not found in cache — try reloading the page (🔄 Reload).');
+    showError('Simulation not found in cache — click 🔄 Reload and try again.');
     return;
   }
   const c=sim.compute||{},p=sim.period||{};
@@ -951,7 +939,13 @@ async function saveSimulation(){
   const message=isEdit?`Update simulation ${nextId}: ${exp} — ${proj}`:`Add simulation ${nextId}: ${exp} — ${proj}`;
   try{
     const body={message,content,branch:BRANCH};
-    if(isEdit) body.sha=editingSha;
+    if(isEdit){
+      // Fetch fresh SHA right before write to avoid conflicts
+      try{
+        const fresh=await ghGet(`contents/${filePath}?ref=${BRANCH}`);
+        body.sha=fresh.sha;
+      }catch(_){ body.sha=editingSha; }
+    }
     await ghPut(`contents/${filePath}`,body);
     document.getElementById('form-msg').innerHTML=
       `<div class="success">✅ Simulation #${nextId} ${isEdit?'updated':'added'} successfully! Reloading…</div>`;

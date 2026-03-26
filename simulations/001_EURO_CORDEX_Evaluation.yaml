@@ -12,17 +12,23 @@ ic_lbc: ERA5
 status: Completed
 compute:
   supercomputer: Juno
-  cores: .nan
+  cores: 1296
   timestep_s: 25
   relaxation_zone_pts: 23
-  run_time_1yr_h: .nan
+  run_time_1yr_h: 13
   output_frequency: 1 hr - 3 hr - 6 hr
-  size_1month_gb: .nan
+  size_1month_gb: null
+actual_start_date: null
+completed_year_month: null
+corehours_per_month: null
 work_path: ''
 notes: ''
+added_by: Mario Raffa
+contact_email: mario.raffa@cmcc.it
 delivery_deadline: null
 domain_map_url: null
 metadata:
   created_by: dashboard
   created_at: '2026-03-26'
   updated_at: '2026-03-26'
+  updated_by: marioRaffa

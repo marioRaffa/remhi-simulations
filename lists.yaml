@@ -23,9 +23,11 @@ supercomputer:
   - Other Cluster
 
 project:
+  - ALPAER
   - FUTURA - CORDEX CORE
   - EUROCORDEX
   - CORDEX FPS tbd
+  - no project
 
 domain:
   - ITALY

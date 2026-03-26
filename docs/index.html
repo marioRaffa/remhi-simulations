@@ -201,9 +201,9 @@ tr:hover td{background:#fafbff}
         <div class="field"><label>Spin-up year</label>
           <input type="number" id="a-spinup" value=""></div>
         <div class="field"><label>Start year</label>
-          <input type="number" id="a-start" value=""></div>
+          <input type="number" id="a-start" value="" oninput="updateCphmPreview()"></div>
         <div class="field"><label>End year</label>
-          <input type="number" id="a-end" value=""></div>
+          <input type="number" id="a-end" value="" oninput="updateCphmPreview()"></div>
       </div>
       <div class="form-grid">
         <div class="field"><label>RCM Model</label><select id="a-rcm"></select></div>
@@ -233,22 +233,22 @@ tr:hover td{background:#fafbff}
       <div class="form-grid">
         <div class="field"><label>Supercomputer</label><select id="a-sc"></select></div>
         <div class="field"><label>Cores</label>
-          <input type="number" id="a-cores" value="" onchange="updateCphmPreview()"></div>
+          <input type="number" id="a-cores" value="" oninput="updateCphmPreview()"></div>
         <div class="field"><label>Run time 1month [h]</label>
-          <input type="number" id="a-rt" value="" step="0.01" onchange="updateCphmPreview()"></div>
+          <input type="number" id="a-rt" value="" step="0.01" oninput="updateCphmPreview()"></div>
       </div>
       <div class="form-grid">
         <div class="field"><label>Spatial resolution</label>
           <input type="text" id="a-res" placeholder="e.g. 0.0275 deg - 3 km" value=""></div>
         <div class="field"><label>Size 1month [GB]</label>
-          <input type="number" id="a-size" value=""></div>
+          <input type="number" id="a-size" value="" oninput="updateCphmPreview()"></div>
         <div class="field"><label>Work path</label>
           <input type="text" id="a-path" placeholder="/work/…"></div>
       </div>
       <div class="form-grid">
         <div class="field">
           <label>📅 Actual start date</label>
-          <input type="date" id="a-actualstart">
+          <input type="date" id="a-actualstart" oninput="updateCphmPreview()">
           <div style="font-size:10px;color:#888;margin-top:3px">When the simulation actually started</div>
         </div>
         <div class="field" style="display:flex;flex-direction:column;justify-content:flex-end">
@@ -259,7 +259,7 @@ tr:hover td{background:#fafbff}
       </div>
       <div class="form-grid" style="margin-bottom:14px">
         <div class="field" style="grid-column:span 3">
-          <label style="font-size:11px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px">📈 Analysis period</label>
+          <label style="font-size:11px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px">📈 Simulation estimates</label>
           <div id="cphm-preview" style="background:#f4f6f9;border-radius:6px;padding:10px 14px;font-size:11px;color:#aaa;line-height:1.7">
             Enter Start year, End year, Cores and Run time 1month to see estimates
           </div>
@@ -633,7 +633,7 @@ function openModal(s){
             </div>
           </div></div>
         <div class="mi span3" style="background:#f0f4ff;border-radius:8px;padding:12px 14px;line-height:1.8">
-          <label>Analysis period: ${totalYears(s)} yr / ${r.totalMonths} months</label>
+          <label>Simulation estimates — ${totalYears(s)} yr / ${r.totalMonths} months</label>
           <span>${[
             r.totalCorehours!=null?'⚡ '+r.totalCorehours.toLocaleString()+' core-hrs total':null,
             r.totalStorage!=null?'💾 '+r.totalStorage.toLocaleString()+' GB total':null,
@@ -769,6 +769,7 @@ function openAddForm(el){
   document.getElementById('save-btn').textContent='💾 Save';
   document.getElementById('form-msg').innerHTML='';
   document.getElementById('tab-btn-form').textContent='➕ Add simulation';
+  updateCphmPreview();
   showTab('form',el||document.getElementById('tab-btn-form'));
 }
 
@@ -809,7 +810,7 @@ function updateCphmPreview(){
     }
     prev.style.background='#f0f4ff'; prev.style.color='#1F3864';
     prev.innerHTML=
-      `<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;color:#888">Analysis period: ${totalYears} yr / ${totalMonths} months</div>`+
+      `<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;color:#888">Simulation estimates — ${totalYears} yr / ${totalMonths} months</div>`+
       (totalCH!=null?`<span style="font-weight:600">⚡ ${totalCH.toLocaleString()} core-hrs total</span><br>`:'')+
       (totalST!=null?`<span style="font-weight:600">💾 ${totalST.toLocaleString()} GB total storage</span>`:'')+
       progressHtml;

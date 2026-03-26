@@ -41,7 +41,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .charts-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
 .chart-card{background:#fff;border-radius:10px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
 .chart-card h3{font-size:12px;font-weight:600;color:#666;margin-bottom:12px;text-transform:uppercase;letter-spacing:.04em}
-.table-wrap{background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.table-wrap{background:#fff;border-radius:10px;overflow-x:auto;box-shadow:0 1px 3px rgba(0,0,0,.06)}
 table{width:100%;border-collapse:collapse}
 th{background:#f8f9fa;font-size:11px;font-weight:600;text-align:left;padding:10px 12px;color:#555;border-bottom:2px solid #e5e7eb;white-space:nowrap}
 td{padding:9px 12px;border-bottom:1px solid #f0f0f0;font-size:12px;vertical-align:middle}
@@ -74,6 +74,30 @@ tr:hover td{background:#fafbff}
 .mode-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
 .mode-add{background:#E2EFDA;color:#375623}
 .mode-edit{background:#D9E1F2;color:#1F3864}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:14px;width:min(780px,95vw);max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.18)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 14px;border-bottom:1px solid #f0f0f0;position:sticky;top:0;background:#fff;z-index:1}
+.modal-title{font-size:15px;font-weight:600;color:#1F3864}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:#aaa;line-height:1;padding:2px 6px;border-radius:4px}
+.modal-close:hover{background:#f0f0f0;color:#333}
+.modal-body{padding:20px}
+.modal-map{width:100%;max-height:200px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb;margin-bottom:16px;display:block}
+.modal-map-ph{width:100%;height:120px;background:#f4f6f9;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:12px;margin-bottom:16px;border:1px solid #e5e7eb}
+.modal-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px 20px}
+.modal-section{font-size:10px;font-weight:700;color:#1F3864;text-transform:uppercase;letter-spacing:.06em;margin:14px 0 8px;border-top:1px solid #f0f0f0;padding-top:12px;grid-column:span 3}
+.mi{display:flex;flex-direction:column;gap:2px}
+.mi label{font-size:10px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:.04em}
+.mi span{font-size:12px;color:#1a1a2e}
+.mi a{font-size:12px;color:#1F3864;text-decoration:none}
+.mi.span2{grid-column:span 2}
+.mi.span3{grid-column:span 3}
+.row-clickable{cursor:pointer}
+.row-clickable:hover td{background:#EEF2FF !important}
+.action-btn:disabled{opacity:.35;cursor:not-allowed !important}
+.pbar-wrap{width:80px;background:#e5e7eb;border-radius:20px;height:7px;overflow:hidden}
+.pbar-fill{height:7px;border-radius:20px;transition:width .3s}
+.pbar-label{font-size:10px;font-weight:600;margin-top:2px}
 </style>
 </head>
 <body>
@@ -116,7 +140,7 @@ tr:hover td{background:#fafbff}
   </div>
   <div class="tabs">
     <div class="tab active" onclick="showTab('summary',this)">📊 Summary</div>
-    <div class="tab" onclick="showTab('database',this)">📋 Database</div>
+    <div class="tab" id="tab-btn-database" onclick="showTab('database',this)">📋 Database</div>
     <div class="tab" id="tab-btn-form" onclick="openAddForm(this)">➕ Add simulation</div>
   </div>
   <div id="error-box"></div>
@@ -147,9 +171,9 @@ tr:hover td{background:#fafbff}
         <thead><tr>
           <th>#</th><th>Project</th><th>Experiment</th><th>Domain</th>
           <th>Period</th><th>RCM</th><th>IC/LBC</th><th>Status</th>
-          <th>Supercomputer</th><th>Cores</th><th>Size 1m [GB]</th><th>📅 Deadline</th><th>Actions</th>
+          <th>Supercomputer</th><th>Cores</th><th>Size 1m [GB]</th><th>📊 Progress</th><th>⚡ Core-hrs used</th><th>⚡ Total est.</th><th>💾 Total est. [GB]</th><th>👤 Added by</th><th>📧 Contact</th><th>📅 Deadline</th><th>Actions</th>
         </tr></thead>
-        <tbody id="db-body"><tr><td colspan="12" class="loading">Loading…</td></tr></tbody>
+        <tbody id="db-body"><tr><td colspan="19" class="loading">Loading…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -207,16 +231,52 @@ tr:hover td{background:#fafbff}
         <div class="field"><label>Work path</label>
           <input type="text" id="a-path" placeholder="/work/…"></div>
       </div>
+      <div class="form-grid">
+        <div class="field">
+          <label>📅 Actual start date</label>
+          <input type="date" id="a-actualstart">
+          <div style="font-size:10px;color:#888;margin-top:3px">When the simulation actually started</div>
+        </div>
+        <div class="field">
+          <label>✅ Last completed month</label>
+          <input type="month" id="a-compym">
+          <div style="font-size:10px;color:#1F6B75;margin-top:3px;font-weight:600">Drives real progress & core-hrs calc</div>
+        </div>
+        <div class="field">
+          <label>⚡ Core-hrs / month</label>
+          <input type="number" id="a-cphm" placeholder="e.g. 11059" step="1">
+          <div style="font-size:10px;color:#888;margin-top:3px">Auto-calculates total core-hrs</div>
+        </div>
+      </div>
+      <div class="form-grid" style="margin-bottom:14px">
+        <div class="field" style="grid-column:span 3">
+          <label style="font-size:11px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px">📈 Period estimates</label>
+          <div id="cphm-preview" style="background:#f4f6f9;border-radius:6px;padding:10px 14px;font-size:11px;color:#aaa;line-height:1.7">
+            Enter period + core-hrs/month to see estimates
+          </div>
+        </div>
+      </div>
       <div class="field" style="margin-bottom:4px"><label>Notes</label>
         <textarea id="a-notes" rows="2" style="width:100%"></textarea></div>
 
-      <div class="form-grid" style="margin-top:14px">
+      <div class="form-section" style="color:#1F3864;border-color:#c0cfe8">Responsibility & scheduling</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>👤 Added by <span style="color:#C00000">*</span></label>
+          <input type="text" id="a-addedby" placeholder="Full name">
+        </div>
+        <div class="field">
+          <label>📧 Contact email <span style="color:#C00000">*</span></label>
+          <input type="email" id="a-email" placeholder="name@cmcc.it">
+        </div>
         <div class="field">
           <label>📅 Delivery deadline</label>
-          <input type="date" id="a-deadline" placeholder="YYYY-MM-DD">
-          <div style="font-size:10px;color:#888;margin-top:3px">Date by which output data must be delivered</div>
+          <input type="date" id="a-deadline">
+          <div style="font-size:10px;color:#888;margin-top:3px">Date by which data must be delivered</div>
         </div>
-        <div class="field" style="grid-column:span 2">
+      </div>
+      <div class="form-grid">
+        <div class="field" style="grid-column:span 3">
           <label>🗺️ Domain map URL</label>
           <input type="text" id="a-mapurl" placeholder="https://… (link to domain image)">
           <div style="font-size:10px;color:#888;margin-top:3px">Link to a domain map image (optional)</div>
@@ -233,12 +293,55 @@ tr:hover td{background:#fafbff}
 </div>
 </div>
 
+<!-- SIMULATION DETAIL MODAL -->
+<div class="modal-overlay" id="sim-modal" onclick="closeModal(event)">
+  <div class="modal" id="modal-box">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">Simulation details</div>
+      <button class="modal-close" onclick="document.getElementById('sim-modal').classList.remove('open');document.body.style.overflow=''">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
 <script>
 const OWNER='marioRaffa', REPO='remhi-simulations', BRANCH='main';
+// ── Progress & core-hours calculator ──────────────────────────────────────
+function calcProgress(s){
+  const p=s.period||{};
+  const totalMonths=(((p.end||0)-(p.start||0))*12)||null;
+  const cphm=s.corehours_per_month||null;
+  const sizepm=s.compute?.size_1month_gb||null;
+  const totalCorehours=cphm&&totalMonths?Math.round(cphm*totalMonths):null;
+  const totalStorage=sizepm&&totalMonths?Math.round(sizepm*totalMonths):null;
+
+  // Use last completed year/month for real progress (format: "YYYY-MM")
+  const comp=s.completed_year_month;
+  if(!comp||!totalMonths||!p.start)
+    return {pct:null,monthsCompleted:null,totalMonths,
+            corehoursUsed:null,storageUsed:null,totalCorehours,totalStorage,estimatedEnd:null};
+
+  const [cy,cm]=comp.split('-').map(Number);
+  const monthsCompleted=Math.max(0,Math.min((cy-p.start)*12+cm, totalMonths));
+  const pct=Math.round((monthsCompleted/totalMonths)*100);
+  const corehoursUsed=cphm?Math.round(cphm*monthsCompleted):null;
+  const storageUsed=sizepm?Math.round(sizepm*monthsCompleted):null;
+
+  let estimatedEnd=null;
+  if(s.actual_start_date){
+    const start=new Date(s.actual_start_date);
+    const estEnd=new Date(start.getTime()+totalMonths*1000*60*60*24*30.44);
+    estimatedEnd=estEnd.toISOString().split('T')[0];
+  }
+  return {pct,monthsCompleted,totalMonths,
+          corehoursUsed,storageUsed,totalCorehours,totalStorage,estimatedEnd};
+}
+
 const STATUS_COLORS={'Completed':'#70AD47','Ongoing':'#4472C4','Planned':'#BF8F00','NOT Planned':'#C00000','Paused':'#808080','Failed':'#C55A11'};
 const STATUS_BG={'Completed':'#E2EFDA','Ongoing':'#D9E1F2','Planned':'#FFF2CC','NOT Planned':'#FFDCE0','Paused':'#F2F2F2','Failed':'#FCE4D6'};
 let allSims=[], lists={}, charts={};
 let editingFile=null, editingSha=null;
+let ghUserName=""; // cached GitHub username
 
 function getToken(){return localStorage.getItem('gh_token')||document.getElementById('gh-token').value||'';}
 function saveToken(){const t=document.getElementById('gh-token').value.trim();if(t)localStorage.setItem('gh_token',t);}
@@ -270,21 +373,46 @@ async function ghDelete(path,sha,msg){
 async function loadData(){
   showError('');
   document.getElementById('sim-count').textContent='Loading…';
-  document.getElementById('db-body').innerHTML='<tr><td colspan="12" class="loading">Loading simulations…</td></tr>';
+  document.getElementById('db-body').innerHTML='<tr><td colspan="19" class="loading">Loading simulations…</td></tr>';
   const saved=localStorage.getItem('gh_token');
   if(saved) document.getElementById('gh-token').value=saved;
   try{
     const ld=await ghGet(`contents/lists.yaml?ref=${BRANCH}`);
     lists=jsyaml.load(atob(ld.content.replace(/\n/g,'')));
-    const files=(await ghGet(`contents/simulations?ref=${BRANCH}`)).filter(f=>f.name.endsWith('.yaml')&&f.name!=='.gitkeep');
-    allSims=await Promise.all(files.map(async f=>{
-      const d=await ghGet(`contents/simulations/${f.name}?ref=${BRANCH}`);
-      const s=jsyaml.load(atob(d.content.replace(/\n/g,'')));
-      s._file=f.name; s._sha=d.sha; return s;
+    // Use Trees API — single request for all files (avoids rate limits)
+    const tree=await ghGet(`git/trees/HEAD?recursive=1`);
+    const simBlobs=tree.tree.filter(f=>f.path.startsWith('simulations/')&&f.path.endsWith('.yaml')&&!f.path.endsWith('.gitkeep'));
+    allSims=await Promise.all(simBlobs.map(async f=>{
+      const d=await ghGet(`git/blobs/${f.sha}`);
+      const text=new TextDecoder().decode(Uint8Array.from(atob(d.content.replace(/\n/g,'')),c=>c.charCodeAt(0)));
+      const s=jsyaml.load(text);
+      s._file=f.path.replace('simulations/','');
+      s._sha=f.sha;
+      // Need blob SHA for PUT/DELETE — fetch the file sha separately only when editing
+      s._treeSha=f.sha;
+      return s;
     }));
     allSims.sort((a,b)=>String(a.id||'').localeCompare(String(b.id||'')));
     populateFilters(); populateFormDropdowns(); applyFilters();
     document.getElementById('last-refresh').textContent='Updated: '+new Date().toLocaleTimeString();
+    // Update sidebar with username context
+    const sbBottom=document.getElementById('last-refresh');
+    if(ghUserName) sbBottom.textContent+=' · 👤 '+ghUserName;
+    // Try to prefill Added by from GitHub API
+    try{
+      const token=getToken();
+      if(token){
+        const user=await fetch('https://api.github.com/user',{
+          headers:{'Authorization':`Bearer ${token}`,'Accept':'application/vnd.github.v3+json'}
+        });
+        if(user.ok){
+          const u=await user.json();
+          ghUserName=u.name||u.login||'';
+          const addedByEl=document.getElementById('a-addedby');
+          if(addedByEl&&!addedByEl.value) addedByEl.value=ghUserName;
+        }
+      }
+    }catch(_){}
   }catch(e){
     showError(`Error loading data: ${e.message}`);
     document.getElementById('sim-count').textContent='Error';
@@ -363,32 +491,179 @@ function renderCharts(sims){
 
 function renderTable(sims){
   if(!sims.length){
-    document.getElementById('db-body').innerHTML='<tr><td colspan="12" style="text-align:center;padding:30px;color:#aaa">No simulations match the filters</td></tr>';
+    document.getElementById('db-body').innerHTML=
+      '<tr><td colspan="19" style="text-align:center;padding:30px;color:#aaa">No simulations match the filters</td></tr>';
     return;
   }
-  document.getElementById('db-body').innerHTML=sims.map((s,i)=>{
+  const tbody=document.getElementById('db-body');
+  tbody.innerHTML='';
+  sims.forEach((s,i)=>{
     const c=s.compute||{},p=s.period||{};
     const bg=STATUS_BG[s.status]||'#fff',fg=STATUS_COLORS[s.status]||'#000';
-    return `<tr style="background:${i%2===0?'#fff':'#fafbff'}">
+    const tr=document.createElement('tr');
+    tr.className='row-clickable';
+    tr.style.background=i%2===0?'#fff':'#fafbff';
+    tr.innerHTML=`
       <td><b style="color:#1F3864">${s.id||''}</b></td>
-      <td>${s.project||''}</td><td>${s.experiment||''}</td>
+      <td>${s.project||''}</td>
+      <td>${s.experiment||''}</td>
       <td style="color:#666">${s.domain||''}</td>
-      <td style="color:#666">${p.start||''}/${p.end||''}</td>
-      <td>${s.rcm_model||''}</td><td>${s.ic_lbc||''}</td>
+      <td style="color:#666;white-space:nowrap">${p.start||''}/${p.end||''}</td>
+      <td>${s.rcm_model||''}</td>
+      <td>${s.ic_lbc||''}</td>
       <td><span class="badge" style="background:${bg};color:${fg}">${s.status||''}</span></td>
       <td>${c.supercomputer||''}</td>
       <td style="text-align:right">${c.cores||''}</td>
       <td style="text-align:right">${c.size_1month_gb||''}</td>
-      <td style="color:#666;font-size:11px;white-space:nowrap">${s.delivery_deadline
-        ? `<span style="background:#FFF2CC;color:#BF8F00;padding:2px 7px;border-radius:10px;font-weight:600">${s.delivery_deadline}</span>`
-        : ''}</td>
-      <td style="white-space:nowrap">
-        ${s.domain_map_url?`<a href="${s.domain_map_url}" target="_blank" title="View domain map"
-          style="font-size:13px;text-decoration:none;margin-right:4px">🗺️</a>`:''}
-        <button class="action-btn btn-edit" onclick='openEdit("${s._file}","${s._sha}")'>✏️ Edit</button>
-        <button class="action-btn btn-del"  onclick='deleteSim("${s._file}","${s._sha}","${s.id}")'>🗑️</button>
-      </td></tr>`;
-  }).join('');
+      <td id="prog-${s.id||i}"></td>
+      <td id="chused-${s.id||i}" style="font-size:11px;text-align:right"></td>
+      <td id="chtot-${s.id||i}" style="font-size:11px;text-align:right;color:#1F3864"></td>
+      <td id="sttot-${s.id||i}" style="font-size:11px;text-align:right;color:#1F3864"></td>
+      <td style="font-size:11px">${s.added_by||'<span style="color:#ccc">—</span>'}</td>
+      <td style="font-size:11px">${s.contact_email
+        ?`<a href="mailto:${s.contact_email}" style="color:#1F3864;text-decoration:none"
+             onclick="event.stopPropagation()">📧 ${s.contact_email}</a>`
+        :'<span style="color:#ccc">—</span>'}</td>
+      <td style="white-space:nowrap">${s.delivery_deadline
+        ?`<span style="background:#FFF2CC;color:#BF8F00;padding:2px 7px;border-radius:10px;font-weight:600;font-size:11px">${s.delivery_deadline}</span>`
+        :''}</td>
+      <td style="white-space:nowrap" onclick="event.stopPropagation()">
+        <button class="action-btn btn-edit" title="Edit">✏️ Edit</button>
+        <button class="action-btn btn-del" title="Delete">🗑️</button>
+      </td>`;
+    // Soft permission: only added_by user can edit/delete
+    const canEdit = !s.added_by || !ghUserName ||
+                    s.added_by.toLowerCase()===ghUserName.toLowerCase() ||
+                    s.metadata?.created_by?.toLowerCase()===ghUserName.toLowerCase();
+    const editBtn = tr.querySelector('.btn-edit');
+    const delBtn  = tr.querySelector('.btn-del');
+    if(!canEdit){
+      editBtn.disabled=true;
+      editBtn.title='Only '+s.added_by+' can edit this simulation';
+      editBtn.style.cssText='opacity:.35;cursor:not-allowed;background:#f0f0f0;color:#aaa;border-color:#ddd';
+      delBtn.disabled=true;
+      delBtn.title='Only '+s.added_by+' can delete this simulation';
+      delBtn.style.cssText='opacity:.35;cursor:not-allowed;background:#f0f0f0;color:#aaa;border-color:#ddd';
+    } else {
+      editBtn.addEventListener('click',()=>openEdit(s._file,s._sha));
+      delBtn.addEventListener('click', ()=>deleteSim(s._file,s._sha,s.id));
+    }
+    tr.addEventListener('click',()=>openModal(s));
+    tbody.appendChild(tr);
+    // Fill progress cells — single calcProgress call per row
+    const rp=calcProgress(s);
+    const progCell=document.getElementById(`prog-${s.id||i}`);
+    if(progCell){
+      if(rp.pct===null){ progCell.innerHTML='<span style="color:#ccc;font-size:11px">—</span>'; }
+      else{
+        const col=rp.pct>=100?'#70AD47':rp.pct>=60?'#4472C4':rp.pct>=30?'#BF8F00':'#ED7D31';
+        progCell.innerHTML=`<div><div class="pbar-wrap"><div class="pbar-fill" style="width:${Math.min(rp.pct,100)}%;background:${col}"></div></div><div class="pbar-label" style="color:${col}">${rp.pct}% <span style="font-weight:400;color:#aaa">(${rp.monthsCompleted}/${rp.totalMonths}m)</span></div></div>`;
+      }
+    }
+    const na='<span style="color:#ccc">—</span>';
+    const ch=document.getElementById(`chused-${s.id||i}`); if(ch) ch.innerHTML=rp.corehoursUsed!==null?rp.corehoursUsed.toLocaleString()+' h':na;
+    const ct=document.getElementById(`chtot-${s.id||i}`);  if(ct) ct.innerHTML=rp.totalCorehours!==null?'<b>'+rp.totalCorehours.toLocaleString()+'</b> h':na;
+    const st=document.getElementById(`sttot-${s.id||i}`);  if(st) st.innerHTML=rp.totalStorage!==null?'<b>'+rp.totalStorage.toLocaleString()+'</b>':na;
+  });
+}
+
+function openModal(s){
+  const c=s.compute||{}, p=s.period||{};
+  const bg=STATUS_BG[s.status]||'#fff', fg=STATUS_COLORS[s.status]||'#000';
+  document.getElementById('modal-title').textContent=
+    `#${s.id||''} — ${s.experiment||''} | ${s.project||''}`;
+
+  const mapHtml=s.domain_map_url
+    ?`<img class="modal-map" src="${s.domain_map_url}" alt="Domain map"
+         onerror="this.outerHTML='<div class=modal-map-ph>Image not available</div>'">`
+    :`<div class="modal-map-ph">No domain map provided</div>`;
+
+  const fi=(label,val,cls='')=>
+    `<div class="mi ${cls}"><label>${label}</label><span>${val||'—'}</span></div>`;
+  const fa=(label,href,txt,cls='')=>
+    `<div class="mi ${cls}"><label>${label}</label><a href="${href}">${txt}</a></div>`;
+  const sec=(t)=>
+    `<div class="modal-section">${t}</div>`;
+
+  document.getElementById('modal-body').innerHTML=`
+    ${mapHtml}
+    <div class="modal-grid">
+      ${sec('Scientific configuration')}
+      ${fi('Experiment', s.experiment)}
+      ${fi('Domain', s.domain)}
+      ${fi('Spatial resolution', s.spatial_resolution)}
+      ${fi('Period', `${p.spin_up?'('+p.spin_up+') ':''}${p.start||''}–${p.end||''}`)}
+      ${fi('RCM Model', s.rcm_model)}
+      ${fi('IC/LBC', s.ic_lbc)}
+      ${sec('Progress & timeline')}
+      ${(()=>{
+        const r=calcProgress(s);
+        if(!s.completed_year_month) return fi('Progress','No completed month set — enter Last completed month in the form','span3');
+        const color=r.pct>=100?'#70AD47':r.pct>=60?'#4472C4':r.pct>=30?'#BF8F00':'#ED7D31';
+        return `<div class="mi span3"><label>Simulation progress</label>
+          <div style="margin-top:4px">
+            <div style="background:#e5e7eb;border-radius:20px;height:10px;overflow:hidden">
+              <div style="width:${Math.min(r.pct,100)}%;height:10px;background:${color};border-radius:20px"></div>
+            </div>
+            <div style="font-size:11px;font-weight:600;color:${color};margin-top:4px">
+              ${r.pct}% complete — ${r.monthsCompleted} of ${r.totalMonths} months
+              <span style="font-weight:400;color:#888;font-size:10px"> (last completed: ${s.completed_year_month})</span>
+            </div>
+          </div></div>
+        <div class="mi span3" style="background:#f0f4ff;border-radius:8px;padding:12px 14px;line-height:1.8">
+          <label>Full period estimates (${r.totalMonths} months)</label>
+          <span>${[
+            r.totalCorehours!=null?'⚡ '+r.totalCorehours.toLocaleString()+' core-hrs total':null,
+            r.totalStorage!=null?'💾 '+r.totalStorage.toLocaleString()+' GB total':null,
+            r.corehoursUsed!=null?'Used: '+r.corehoursUsed.toLocaleString()+' core-hrs'+(r.storageUsed!=null?' / '+r.storageUsed.toLocaleString()+' GB':''):null
+          ].filter(Boolean).join(' · ')}</span>
+        </div>`;
+      })()}
+      ${fi('Core-hrs/month', s.corehours_per_month?s.corehours_per_month.toLocaleString()+' h/month':null)}
+      ${fi('Last completed month', s.completed_year_month)}
+      ${fi('Actual start date', s.actual_start_date)}
+      ${sec('Compute')}
+      ${fi('Supercomputer', c.supercomputer)}
+      ${fi('Cores', c.cores)}
+      ${fi('Run time 1yr [h]', c.run_time_1yr_h)}
+      ${fi('Size 1month [GB]', c.size_1month_gb)}
+      ${fi('Output frequency', c.output_frequency)}
+      ${fi('Work path', s.work_path, 'span3')}
+      ${sec('Status & responsibility')}
+      <div class="mi"><label>Status</label>
+        <span class="badge" style="background:${bg};color:${fg};margin-top:2px">${s.status||'—'}</span>
+      </div>
+      ${(()=>{
+        const isOwner=!s.added_by||!ghUserName||
+          s.added_by.toLowerCase()===ghUserName.toLowerCase()||
+          s.metadata?.created_by?.toLowerCase()===ghUserName.toLowerCase();
+        const ownerBadge=isOwner&&ghUserName
+          ?'<span style="background:#E2EFDA;color:#375623;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700;margin-left:6px">✓ You</span>'
+          :'<span style="background:#f0f0f0;color:#888;padding:1px 7px;border-radius:10px;font-size:10px;margin-left:6px">🔒 Read-only for you</span>';
+        return `<div class="mi"><label>Added by</label><span>${s.added_by||'—'}${ownerBadge}</span></div>`;
+      })()}
+      ${s.contact_email
+        ? fa('Contact email',`mailto:${s.contact_email}`,s.contact_email)
+        : fi('Contact email','')}
+      ${fi('Delivery deadline', s.delivery_deadline
+        ? `<span style="background:#FFF2CC;color:#BF8F00;padding:1px 8px;border-radius:8px;font-weight:600">${s.delivery_deadline}</span>`
+        : '—')}
+      ${fi('Created by', s.metadata?.created_by)}
+      ${fi('Last updated', s.metadata?.updated_at)}
+      ${s.notes?`${sec('Notes')}<div class="mi span3"><span>${s.notes}</span></div>`:''}
+    </div>`;
+
+  document.getElementById('sim-modal').classList.add('open');
+  // Prevent body scroll
+  document.body.style.overflow='hidden';
+}
+
+function closeModal(e){
+  // Close only when clicking the overlay, not the modal itself
+  if(e.target.id==='sim-modal'){
+    document.getElementById('sim-modal').classList.remove('open');
+    document.body.style.overflow='';
+  }
 }
 
 function populateFormDropdowns(){
@@ -408,14 +683,15 @@ function updateLbcList(){
   if(!lists['ic_lbc_reanalysis'])return;
   const exp=document.getElementById('a-experiment').value;
   const isEval=exp==='Evaluation';
-  const opts=isEval?(lists['ic_lbc_reanalysis']||[]):(lists['ic_lbc_gcm']||[]);
+  const isEmpty=!exp||exp==='';
+  const opts=isEmpty?[]:(isEval?(lists['ic_lbc_reanalysis']||[]):(lists['ic_lbc_gcm']||[]));
   const lbl=document.getElementById('a-lbc-label');
   const sel=document.getElementById('a-lbc');
   const hint=document.getElementById('a-lbc-hint');
-  lbl.textContent=isEval?'IC/LBC — Reanalysis':'IC/LBC — CMIP6 GCM';
-  lbl.style.color=isEval?'#1F6B75':'#4472C4';
-  sel.style.border=`2px solid ${isEval?'#1F6B75':'#4472C4'}`;
-  hint.textContent=isEval?'Reanalysis only (Evaluation run)':'CMIP6 GCM forcing (Historical / SSP)';
+  lbl.textContent=isEmpty?'IC/LBC':(isEval?'IC/LBC — Reanalysis':'IC/LBC — CMIP6 GCM');
+  lbl.style.color=isEmpty?'#555':(isEval?'#1F6B75':'#4472C4');
+  sel.style.border=isEmpty?'1px solid #e5e7eb':`2px solid ${isEval?'#1F6B75':'#4472C4'}`;
+  hint.textContent=isEmpty?'Select an experiment first':(isEval?'Reanalysis only (Evaluation run)':'CMIP6 GCM forcing (Historical / SSP)');
   const cur=sel.value; sel.innerHTML='';
   const ph=document.createElement('option');ph.value='';ph.textContent='—';sel.appendChild(ph);
   opts.forEach(v=>{const o=document.createElement('option');o.value=o.textContent=v;if(v===cur)o.selected=true;sel.appendChild(o);});
@@ -430,6 +706,11 @@ function openAddForm(el){
   setVal('a-spinup','');setVal('a-start','');setVal('a-end','');
   setVal('a-cores','');setVal('a-rt','');setVal('a-size','');
   setVal('a-res','');
+  setVal('a-addedby',ghUserName); // restore cached GitHub username
+  setVal('a-email','');
+  setVal('a-actualstart','');
+  setVal('a-compym','');
+  setVal('a-cphm','');
   setVal('a-deadline','');
   setVal('a-mapurl','');
   document.getElementById('map-preview').innerHTML='';
@@ -442,8 +723,13 @@ function openAddForm(el){
   showTab('form',el||document.getElementById('tab-btn-form'));
 }
 
-function openEdit(filename,sha){
-  editingFile=filename; editingSha=sha;
+async function openEdit(filename,sha){
+  editingFile=filename;
+  // Fetch fresh file SHA for the PUT operation
+  try{
+    const d=await ghGet(`contents/simulations/${filename}?ref=${BRANCH}`);
+    editingSha=d.sha;
+  }catch(_){ editingSha=sha; }
   const sim=allSims.find(s=>s._file===filename); if(!sim)return;
   const c=sim.compute||{},p=sim.period||{};
   populateFormDropdowns();
@@ -459,8 +745,14 @@ function openEdit(filename,sha){
   setVal('a-sc',c.supercomputer);
   setVal('a-cores',c.cores);setVal('a-rt',c.run_time_1yr_h);setVal('a-size',c.size_1month_gb);
   setVal('a-path',sim.work_path);setVal('a-notes',sim.notes);
+  setVal('a-addedby',sim.added_by||'');
+  setVal('a-email',sim.contact_email||'');
   setVal('a-deadline',sim.delivery_deadline||'');
+  setVal('a-actualstart',sim.actual_start_date||'');
+  setVal('a-compym',sim.completed_year_month||'');
+  setVal('a-cphm',sim.corehours_per_month||'');
   setVal('a-mapurl',sim.domain_map_url||'');
+  updateCphmPreview();
   // Trigger map preview
   const mapPrev=document.getElementById('map-preview');
   if(sim.domain_map_url){
@@ -480,7 +772,7 @@ function openEdit(filename,sha){
 function cancelForm(){
   editingFile=null; editingSha=null;
   document.getElementById('tab-btn-form').textContent='➕ Add simulation';
-  showTab('database',document.querySelector('.tab:nth-child(2)'));
+  showTab('database',document.getElementById('tab-btn-database'));
 }
 
 async function saveSimulation(){
@@ -492,13 +784,26 @@ async function saveSimulation(){
   // Validate required fields
   const required=[
     ['a-project','Project'],['a-experiment','Experiment'],['a-domain','Domain'],
-    ['a-status','Status'],['a-sc','Supercomputer']
+    ['a-status','Status'],['a-sc','Supercomputer'],
+    ['a-addedby','Added by'],['a-email','Contact email'],
+    ['a-lbc','IC/LBC']
   ];
   for(const [id,label] of required){
     const val=document.getElementById(id).value;
     if(!val||val===''){
       document.getElementById('form-msg').innerHTML=
         `<div class="error">⚠️ Please fill in the required field: <b>${label}</b></div>`;
+      return;
+    }
+  }
+  // Soft permission check before saving
+  if(editingFile){
+    const existing=allSims.find(s=>s._file===editingFile);
+    if(existing&&existing.added_by&&ghUserName&&
+       existing.added_by.toLowerCase()!==ghUserName.toLowerCase()&&
+       existing.metadata?.created_by?.toLowerCase()!==ghUserName.toLowerCase()){
+      document.getElementById('form-msg').innerHTML=
+        '<div class="error">⚠️ Permission denied: only <b>'+existing.added_by+'</b> can edit this simulation.</div>';
       return;
     }
   }
@@ -515,31 +820,40 @@ async function saveSimulation(){
     id:nextId,project:proj,experiment:exp,
     domain:document.getElementById('a-domain').value,
     spatial_resolution:document.getElementById('a-res').value,
-    period:{spin_up:parseInt(document.getElementById('a-spinup').value),
-            start:parseInt(document.getElementById('a-start').value),
-            end:parseInt(document.getElementById('a-end').value)},
+    period:{spin_up:parseInt(document.getElementById('a-spinup').value)||null,
+            start:parseInt(document.getElementById('a-start').value)||null,
+            end:parseInt(document.getElementById('a-end').value)||null},
     rcm_model:document.getElementById('a-rcm').value,
-    ic_lbc:document.getElementById('a-lbc').value,
+    ic_lbc:document.getElementById('a-lbc').value||null,
     status:document.getElementById('a-status').value,
     compute:{supercomputer:document.getElementById('a-sc').value,
-             cores:parseInt(document.getElementById('a-cores').value),
+             cores:parseInt(document.getElementById('a-cores').value)||null,
              timestep_s:25,relaxation_zone_pts:23,
-             run_time_1yr_h:parseFloat(document.getElementById('a-rt').value),
+             run_time_1yr_h:parseFloat(document.getElementById('a-rt').value)||null,
              output_frequency:'1 hr - 3 hr - 6 hr',
-             size_1month_gb:parseFloat(document.getElementById('a-size').value)},
+             size_1month_gb:parseFloat(document.getElementById('a-size').value)||null},
+    actual_start_date:document.getElementById('a-actualstart').value||null,
+    completed_year_month:document.getElementById('a-compym').value||null,
+    corehours_per_month:parseInt(document.getElementById('a-cphm').value)||null,
     work_path:document.getElementById('a-path').value,
     notes:document.getElementById('a-notes').value,
+    added_by:document.getElementById('a-addedby').value||null,
+    contact_email:document.getElementById('a-email').value||null,
     delivery_deadline:document.getElementById('a-deadline').value||null,
     domain_map_url:document.getElementById('a-mapurl').value||null,
-    metadata:{created_by:existing?.metadata?.created_by||'dashboard',
-              created_at:existing?.metadata?.created_at||today,updated_at:today}
+    metadata:{
+      created_by:existing?.metadata?.created_by||document.getElementById('a-addedby').value||'dashboard',
+      created_at:existing?.metadata?.created_at||today,
+      updated_at:today,
+      updated_by:ghUserName||document.getElementById('a-addedby').value||null
+    }
   };
   const slug=isEdit
     ?editingFile.replace('.yaml','')
     :`${nextId}_${proj.replace(/[^a-zA-Z0-9]/g,'_').slice(0,20)}_${exp.replace(/[^a-zA-Z0-9]/g,'_')}`;
   const filePath=`simulations/${slug}.yaml`;
   const yamlStr=jsyaml.dump(sim,{lineWidth:-1});
-    const content=btoa(encodeURIComponent(yamlStr).replace(/%([0-9A-F]{2})/g,(_,p)=>String.fromCharCode('0x'+p)));
+    const content=btoa(encodeURIComponent(yamlStr).replace(/%([0-9A-Fa-f]{2})/g,(_,p)=>String.fromCharCode(parseInt(p,16))));
   const message=isEdit?`Update simulation ${nextId}: ${exp} — ${proj}`:`Add simulation ${nextId}: ${exp} — ${proj}`;
   try{
     const body={message,content,branch:BRANCH};
@@ -551,7 +865,7 @@ async function saveSimulation(){
       editingFile=null;editingSha=null;
       document.getElementById('tab-btn-form').textContent='➕ Add simulation';
       loadData();
-      showTab('database',document.querySelector('.tab:nth-child(2)'));
+      showTab('database',document.getElementById('tab-btn-database'));
     },2500);
   }catch(e){
     document.getElementById('form-msg').innerHTML=`<div class="error">⚠️ Error: ${e.message}</div>`;
@@ -562,8 +876,19 @@ async function deleteSim(filename,sha,id){
   if(!confirm(`Delete simulation #${id}?\nThis action cannot be undone.`))return;
   const token=getToken();
   if(!token){alert('GitHub token required in the sidebar.');return;}
+  // Soft permission check
+  const sim=allSims.find(s=>s._file===filename);
+  if(sim&&sim.added_by&&ghUserName&&
+     sim.added_by.toLowerCase()!==ghUserName.toLowerCase()&&
+     sim.metadata?.created_by?.toLowerCase()!==ghUserName.toLowerCase()){
+    alert('Permission denied: only '+sim.added_by+' can delete this simulation.');
+    return;
+  }
   try{
-    await ghDelete(`contents/simulations/${filename}`,sha,`Delete simulation #${id}`);
+    // Fetch fresh SHA before delete
+    let realSha=sha;
+    try{ const d=await ghGet(`contents/simulations/${filename}?ref=${BRANCH}`); realSha=d.sha; }catch(_){}
+    await ghDelete(`contents/simulations/${filename}`,realSha,`Delete simulation #${id}`);
     await loadData();
   }catch(e){alert(`Error deleting: ${e.message}`);}
 }
@@ -580,6 +905,63 @@ function showError(msg){
 
 loadData();
 
+// Close modal on Escape
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    document.getElementById('sim-modal').classList.remove('open');
+    document.body.style.overflow='';
+  }
+});
+
+// Core-hrs live preview
+function updateCphmPreview(){
+  const compym = document.getElementById('a-compym')?.value;
+  const cphm      = parseInt(document.getElementById('a-cphm')?.value)||0;
+  const sizepm    = parseFloat(document.getElementById('a-size')?.value)||0;
+  const startYear = parseInt(document.getElementById('a-start')?.value)||0;
+  const endYear   = parseInt(document.getElementById('a-end')?.value)||0;
+  const prev      = document.getElementById('cphm-preview');
+  if(!prev) return;
+
+  const totalMonths = (endYear-startYear)*12;
+
+  // Always show totals if we have period + at least one resource value
+  if(totalMonths>0 && (cphm||sizepm)){
+    const totalCH  = cphm  ? Math.round(cphm*totalMonths)  : null;
+    const totalST  = sizepm? Math.round(sizepm*totalMonths) : null;
+
+    // Progress part using completed year/month
+    let progressHtml='';
+    if(compym && startYear){
+      const [cy,cm]=compym.split('-').map(Number);
+      const monthsCompleted=Math.max(0,Math.min((cy-startYear)*12+cm, totalMonths));
+      const pct=Math.min(100,Math.round((monthsCompleted/totalMonths)*100));
+      const usedCH = cphm  ? Math.round(cphm*monthsCompleted)   : null;
+      const usedST = sizepm? Math.round(sizepm*monthsCompleted) : null;
+      const color=pct>=100?'#375623':pct>=60?'#1F3864':pct>=30?'#854F0B':'#833C00';
+      progressHtml=`<div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(0,0,0,.08)">
+        <span style="font-weight:700;color:${color}">${pct}% complete (${monthsCompleted}/${totalMonths} months)</span>
+        ${usedCH!==null?`<br>⚡ ${usedCH.toLocaleString()} / ${totalCH.toLocaleString()} core-hrs used`:''}
+        ${usedST!==null?`<br>💾 ${usedST.toLocaleString()} / ${totalST.toLocaleString()} GB used`:''}
+      </div>`;
+    }
+
+    prev.style.background='#f0f4ff'; prev.style.color='#1F3864';
+    prev.innerHTML=
+      `<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;color:#888">Full period estimate (${totalMonths} months)</div>` +
+      (totalCH!==null?`<span style="font-weight:600">⚡ ${totalCH.toLocaleString()} core-hrs total</span><br>`:'') +
+      (totalST!==null?`<span style="font-weight:600">💾 ${totalST.toLocaleString()} GB total storage</span>`:'') +
+      progressHtml;
+    return;
+  }
+  prev.style.background='#f4f6f9'; prev.style.color='#aaa';
+  prev.innerHTML='Enter period + core-hrs/month or size/month to see estimates';
+}
+
+document.addEventListener('input', function(e){
+  if(['a-actualstart','a-compym','a-cphm','a-size','a-start','a-end'].includes(e.target.id)) updateCphmPreview();
+});
+
 // Map preview
 document.addEventListener('input', function(e){
   if(e.target.id==='a-mapurl'){
@@ -588,7 +970,7 @@ document.addEventListener('input', function(e){
     if(url){
       prev.innerHTML=`<img src="${url}" alt="Domain map"
         style="max-width:100%;max-height:180px;border-radius:8px;border:1px solid #e5e7eb;margin-top:4px"
-        onerror="this.style.display='none';prev.innerHTML='<span style=color:#c00;font-size:11px>Image not accessible</span>'">`;
+        onerror="this.style.display='none';document.getElementById('map-preview').innerHTML='<span style=\'color:#c00;font-size:11px\'>Image not accessible</span>'">`;
     } else {
       prev.innerHTML='';
     }

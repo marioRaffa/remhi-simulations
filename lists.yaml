@@ -43,7 +43,7 @@ domain:
   - ANT-CORDEX
 
 rcm_model:
-  - CCLM
+  - CCLM 6-0-1
   - ICLM
 
 # IC/LBC for Evaluation experiment → reanalysis only

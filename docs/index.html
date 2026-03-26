@@ -555,8 +555,8 @@ function renderTable(sims){
         ?`<span style="background:#FFF2CC;color:#BF8F00;padding:2px 7px;border-radius:10px;font-weight:600;font-size:11px">${s.delivery_deadline}</span>`
         :''}</td>
       <td style="white-space:nowrap" onclick="event.stopPropagation()">
-        <button class="action-btn btn-edit" title="Edit">✏️ Edit</button>
-        <button class="action-btn btn-del" title="Delete">🗑️</button>
+        <button class="action-btn btn-edit" data-file="${s._file}" data-sha="${s._sha}" data-id="${s.id||''}">✏️ Edit</button>
+        <button class="action-btn btn-del"  data-file="${s._file}" data-sha="${s._sha}" data-id="${s.id||''}">🗑️</button>
       </td>`;
     // Soft permission: only added_by user can edit/delete
     // Soft permission: allow edit if no token, or if user matches added_by or created_by
@@ -575,11 +575,13 @@ function renderTable(sims){
       delBtn.title='Only '+s.added_by+' can delete this simulation';
       delBtn.style.cssText='opacity:.35;cursor:not-allowed;background:#f0f0f0;color:#aaa;border-color:#ddd';
     } else {
-      editBtn.addEventListener('click',()=>openEdit(s._file,s._sha));
-      delBtn.addEventListener('click', ()=>deleteSim(s._file,s._sha,s.id));
+      editBtn.removeAttribute('disabled');
+      delBtn.removeAttribute('disabled');
     }
-    tr.addEventListener('click',()=>openModal(s));
-    tbody.appendChild(tr);
+    tr.setAttribute('data-file', s._file);
+    tr.setAttribute('data-sha',  s._sha);
+    tr.setAttribute('data-id',   s.id||'');
+    tbody.appendChild(tr); // click handled by delegated listener
     // Fill totals
     const rp=calcProgress(s);
     const na='<span style="color:#ccc">—</span>';
@@ -998,6 +1000,28 @@ function showError(msg){
 }
 
 loadData();
+
+// ── Single delegated listener for table interactions ──────────────────────
+document.addEventListener('click', function(e){
+  const btn = e.target.closest('button.btn-edit, button.btn-del');
+  if(btn){
+    e.stopPropagation();
+    const file = btn.dataset.file;
+    const sha  = btn.dataset.sha;
+    const id   = btn.dataset.id;
+    if(!file) return;
+    if(btn.disabled) return;
+    if(btn.classList.contains('btn-edit')) openEdit(file, sha);
+    else deleteSim(file, sha, id);
+    return;
+  }
+  // Row click → modal
+  const tr = e.target.closest('tr[data-file]');
+  if(tr && !e.target.closest('td[onclick]') && !e.target.closest('a')){
+    const sim = allSims.find(s => s._file === tr.dataset.file);
+    if(sim) openModal(sim);
+  }
+});
 
 // Close modal on Escape
 document.addEventListener('keydown',e=>{

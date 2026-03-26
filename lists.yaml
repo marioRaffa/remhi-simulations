@@ -23,8 +23,9 @@ supercomputer:
   - Other Cluster
 
 project:
-  - FUTURA - CORDEX CORE
-  - EURO-CORDEX
+  - ALPAERA 
+  - FUTURA / CORDEX CORE
+  - EUROCORDEX
 
 domain:
   - EUR-CORDEX

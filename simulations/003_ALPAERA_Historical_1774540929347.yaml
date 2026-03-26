@@ -1,0 +1,34 @@
+id: '003'
+project: ALPAERA
+experiment: Historical
+domain: ALPS
+spatial_resolution: 0.0275° - 3 Km
+period:
+  spin_up: 2009
+  start: 2010
+  end: 2019
+rcm_model: CCLM
+nesting_type: intermediate
+ic_lbc: sim:002 — Historical EUR-CORDEX
+parent_sim_id: '002'
+status: Completed
+compute:
+  supercomputer: Cassandra
+  cores: 1536
+  timestep_s: 25
+  relaxation_zone_pts: 23
+  run_time_1month_h: 4
+  output_frequency: 1 hr - 3 hr - 6 hr
+  size_1month_gb: 12
+actual_start_date: '2025-01-01'
+work_path: ''
+notes: ''
+added_by: marioRaffa
+contact_email: mario.raffa@cmcc.it
+delivery_deadline: '2025-12-31'
+domain_map_url: null
+metadata:
+  created_by: marioRaffa
+  created_at: '2026-03-26'
+  updated_at: '2026-03-26'
+  updated_by: marioRaffa

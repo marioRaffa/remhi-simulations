@@ -24,9 +24,9 @@ supercomputer:
 
 project:
   - ALPAERA
-  - FUTURA - CORDEX CORE
-  - EUROCORDEX
-  - CORDEX FPS tbd
+  - CORDEX CORE (FUTURA)
+  - EURO-CORDEX
+  - CORDEX-FPS tbd
   - no project
 
 domain:

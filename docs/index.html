@@ -208,9 +208,23 @@ tr:hover td{background:#fafbff}
       <div class="form-grid">
         <div class="field"><label>RCM Model</label><select id="a-rcm"></select></div>
         <div class="field">
+          <label>Nesting type</label>
+          <select id="a-nesttype" onchange="updateNestingUI()">
+            <option value="">—</option>
+            <option value="direct">Direct (from GCM / Reanalysis)</option>
+            <option value="intermediate">Intermediate (from another simulation)</option>
+          </select>
+          <div style="font-size:10px;color:#888;margin-top:3px" id="a-nesttype-hint">How this simulation is driven</div>
+        </div>
+        <div class="field" id="field-lbc">
           <label id="a-lbc-label">IC/LBC</label>
           <select id="a-lbc"></select>
           <div id="a-lbc-hint" style="font-size:10px;color:#888;margin-top:3px"></div>
+        </div>
+        <div class="field" id="field-parent" style="display:none">
+          <label>Parent simulation</label>
+          <select id="a-parent"></select>
+          <div style="font-size:10px;color:#888;margin-top:3px">Output of this simulation is used as IC/LBC</div>
         </div>
         <div class="field"><label>Status</label><select id="a-status"></select></div>
       </div>
@@ -247,7 +261,7 @@ tr:hover td{background:#fafbff}
         <div class="field" style="grid-column:span 3">
           <label style="font-size:11px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px">📈 Analysis period</label>
           <div id="cphm-preview" style="background:#f4f6f9;border-radius:6px;padding:10px 14px;font-size:11px;color:#aaa;line-height:1.7">
-            Enter Start year, End year to see the total period
+            Enter Start year, End year, Cores and Run time 1month to see estimates
           </div>
         </div>
       </div>
@@ -514,7 +528,14 @@ function renderTable(sims){
       <td style="color:#666">${s.domain||''}</td>
       <td style="color:#666;white-space:nowrap">${p.start||''}/${p.end||''}</td>
       <td>${s.rcm_model||''}</td>
-      <td>${s.ic_lbc||''}</td>
+      <td>${(()=>{
+        if(s.nesting_type==='intermediate'||s.parent_sim_id){
+          const pid=s.parent_sim_id;
+          return pid?`<span style="background:#EDE9FE;color:#4C1D95;padding:1px 6px;border-radius:8px;font-size:10px;font-weight:600">🔗 #${pid}</span>`:
+                     `<span style="background:#EDE9FE;color:#4C1D95;padding:1px 6px;border-radius:8px;font-size:10px">nested</span>`;
+        }
+        return s.ic_lbc||'';
+      })()}</td>
       <td><span class="badge" style="background:${bg};color:${fg}">${s.status||''}</span></td>
       <td>${c.supercomputer||''}</td>
       <td style="text-align:right">${c.cores||''}</td>
@@ -596,7 +617,16 @@ function openModal(s){
       ${fi('Spatial resolution', s.spatial_resolution)}
       ${fi('Period', `${p.spin_up?'('+p.spin_up+') ':''}${p.start||''}–${p.end||''}`)}
       ${fi('RCM Model', s.rcm_model)}
-      ${fi('IC/LBC', s.ic_lbc)}
+      ${(()=>{
+        if(s.nesting_type==='intermediate'||s.parent_sim_id){
+          const psim=allSims.find(x=>x.id===s.parent_sim_id);
+          const pinfo=psim?`#${psim.id} — ${psim.experiment} ${psim.domain} (${psim.ic_lbc||''})`:s.ic_lbc||'—';
+          return `<div class="mi span3"><label>🔗 Intermediate nesting — Parent simulation</label>
+            <span style="background:#EDE9FE;color:#4C1D95;padding:2px 10px;border-radius:8px;font-size:12px;font-weight:600;display:inline-block;margin-top:2px">${pinfo}</span>
+          </div>`;
+        }
+        return fi('IC/LBC (direct)',s.ic_lbc);
+      })()}
       ${sec('Progress & timeline')}
       ${(()=>{
         const r=calcProgress(s);
@@ -680,7 +710,7 @@ function populateFormDropdowns(){
   updateLbcList();
 }
 
-function updateLbcList(){
+function updateLbcList(keepVal){
   if(!lists['ic_lbc_reanalysis'])return;
   const exp=document.getElementById('a-experiment').value;
   const isEval=exp==='Evaluation';
@@ -693,9 +723,35 @@ function updateLbcList(){
   lbl.style.color=isEmpty?'#555':(isEval?'#1F6B75':'#4472C4');
   sel.style.border=isEmpty?'1px solid #e5e7eb':`2px solid ${isEval?'#1F6B75':'#4472C4'}`;
   hint.textContent=isEmpty?'Select an experiment first':(isEval?'Reanalysis only (Evaluation run)':'CMIP6 GCM forcing (Historical / SSP)');
-  const cur=sel.value; sel.innerHTML='';
+  const cur=keepVal||sel.value; sel.innerHTML='';
   const ph=document.createElement('option');ph.value='';ph.textContent='—';sel.appendChild(ph);
   opts.forEach(v=>{const o=document.createElement('option');o.value=o.textContent=v;if(v===cur)o.selected=true;sel.appendChild(o);});
+}
+
+function updateNestingUI(){
+  const nesttype=document.getElementById('a-nesttype')?.value;
+  const fieldLbc=document.getElementById('field-lbc');
+  const fieldParent=document.getElementById('field-parent');
+  if(!fieldLbc||!fieldParent)return;
+  if(nesttype==='intermediate'){
+    fieldLbc.style.display='none';
+    fieldParent.style.display='block';
+    // Populate parent simulation dropdown
+    const sel=document.getElementById('a-parent');
+    const cur=sel.value; sel.innerHTML='';
+    const ph=document.createElement('option');ph.value='';ph.textContent='—';sel.appendChild(ph);
+    allSims.forEach(s=>{
+      if(s._file===editingFile)return; // don't allow self-reference
+      const o=document.createElement('option');
+      o.value=s.id;
+      o.textContent=`#${s.id} — ${s.experiment} ${s.domain} (${s.ic_lbc||''})`;
+      if(s.id===cur)o.selected=true;
+      sel.appendChild(o);
+    });
+  } else {
+    fieldLbc.style.display='block';
+    fieldParent.style.display='none';
+  }
 }
 
 function setVal(id,v){const el=document.getElementById(id);if(el)el.value=v===null||v===undefined?'':v;}
@@ -710,6 +766,9 @@ function openAddForm(el){
   setVal('a-addedby',ghUserName||''); // always auto from GitHub
   setVal('a-email','');
   setVal('a-actualstart','');
+  setVal('a-nesttype','');
+  document.getElementById('field-lbc').style.display='block';
+  document.getElementById('field-parent').style.display='none';
   setVal('a-deadline','');
   setVal('a-mapurl','');
   document.getElementById('map-preview').innerHTML='';
@@ -734,8 +793,16 @@ async function openEdit(filename,sha){
   populateFormDropdowns();
   setVal('a-project',sim.project);
   setVal('a-experiment',sim.experiment);
-  updateLbcList();
-  setTimeout(()=>setVal('a-lbc',sim.ic_lbc),0);
+  // Set nesting type before populating LBC
+  const nesttype=sim.nesting_type||(sim.parent_sim_id?'intermediate':'direct');
+  setVal('a-nesttype', nesttype);
+  if(nesttype==='intermediate'){
+    updateNestingUI();
+    setTimeout(()=>setVal('a-parent', sim.parent_sim_id||''),0);
+  } else {
+    updateLbcList(sim.ic_lbc); // pass current value to preserve selection
+    updateNestingUI();
+  }
   setVal('a-domain',sim.domain);
   setVal('a-res',sim.spatial_resolution);
   setVal('a-spinup',p.spin_up);setVal('a-start',p.start);setVal('a-end',p.end);
@@ -747,6 +814,7 @@ async function openEdit(filename,sha){
   setVal('a-addedby',sim.added_by||ghUserName||'');
   setVal('a-email',sim.contact_email||'');
   setVal('a-deadline',sim.delivery_deadline||'');
+  setVal('a-nesttype',sim.nesting_type||(sim.parent_sim_id?'intermediate':'direct'));
   setVal('a-actualstart',sim.actual_start_date||'');
   setVal('a-mapurl',sim.domain_map_url||'');
   updateCphmPreview();
@@ -783,8 +851,15 @@ async function saveSimulation(){
     ['a-project','Project'],['a-experiment','Experiment'],['a-domain','Domain'],
     ['a-status','Status'],['a-sc','Supercomputer'],
     ['a-email','Contact email'],
-    ['a-lbc','IC/LBC']
   ];
+  // IC/LBC required only for direct nesting
+  if((document.getElementById('a-nesttype')?.value||'direct')!=='intermediate'){
+    required.push(['a-lbc','IC/LBC']);
+  } else if(!document.getElementById('a-parent')?.value){
+    document.getElementById('form-msg').innerHTML=
+      '<div class="error">⚠️ Please select a <b>Parent simulation</b> for intermediate nesting.</div>';
+    return;
+  }
   for(const [id,label] of required){
     const val=document.getElementById(id).value;
     if(!val||val===''){
@@ -821,7 +896,18 @@ async function saveSimulation(){
             start:parseInt(document.getElementById('a-start').value)||null,
             end:parseInt(document.getElementById('a-end').value)||null},
     rcm_model:document.getElementById('a-rcm').value,
-    ic_lbc:document.getElementById('a-lbc').value||null,
+    nesting_type:document.getElementById('a-nesttype').value||'direct',
+    ic_lbc:(()=>{
+      const nt=document.getElementById('a-nesttype').value;
+      if(nt==='intermediate'){
+        const pid=document.getElementById('a-parent').value;
+        const psim=allSims.find(s=>s.id===pid);
+        return psim?`sim:${psim.id} — ${psim.experiment} ${psim.domain}`:null;
+      }
+      return document.getElementById('a-lbc').value||null;
+    })(),
+    parent_sim_id:document.getElementById('a-nesttype').value==='intermediate'
+      ?document.getElementById('a-parent').value||null:null,
     status:document.getElementById('a-status').value,
     compute:{supercomputer:document.getElementById('a-sc').value,
              cores:parseInt(document.getElementById('a-cores').value)||null,

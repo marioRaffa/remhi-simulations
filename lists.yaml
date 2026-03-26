@@ -28,6 +28,8 @@ project:
   - EUROCORDEX
 
 domain:
+  - ALPS
+  - ITALY
   - EUR-CORDEX
   - AFR-CORDEX
   - NAM-CORDEX

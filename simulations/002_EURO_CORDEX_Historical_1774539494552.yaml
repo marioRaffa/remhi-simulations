@@ -13,7 +13,7 @@ ic_lbc: CMCC-CM2-SR5
 parent_sim_id: null
 status: Completed
 compute:
-  supercomputer: Juno
+  supercomputer: Cassandra
   cores: 1536
   timestep_s: 25
   relaxation_zone_pts: 23

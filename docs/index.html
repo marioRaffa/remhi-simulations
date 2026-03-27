@@ -175,7 +175,7 @@ tr:hover td{background:#fafbff}
         <thead><tr>
           <th title="IDs are permanent — gaps after deletion are expected">#</th><th>Project</th><th>Experiment</th><th>Domain</th>
           <th>Period</th><th>RCM</th><th>IC/LBC</th><th>Status</th>
-          <th>Supercomputer</th><th>Cores</th><th>Size 1m [GB]</th><th>⚡ Total est.</th><th>💾 Total est. [GB]</th><th>👤 Added by</th><th>📧 Contact</th><th>🏁 Exp. completion</th><th>Actions</th>
+          <th>Supercomputer</th><th>Cores</th><th>Size 1m [GB]</th><th>⚡ Total est. [core-hrs]</th><th>💾 Total est. [GB]</th><th>👤 Added by</th><th>📧 Contact</th><th>🏁 Exp. completion</th><th>Actions</th>
         </tr></thead>
         <tbody id="db-body"><tr><td colspan="17" class="loading">Loading…</td></tr></tbody>
       </table>
@@ -590,7 +590,7 @@ function renderTable(sims){
     // Fill totals
     const rp=calcProgress(s);
     const na='<span style="color:#ccc">—</span>';
-    const ct=document.getElementById(`chtot-${s.id||i}`);if(ct)ct.innerHTML=rp.totalCorehours!=null?'<b>'+rp.totalCorehours.toLocaleString()+'</b> h':na;
+    const ct=document.getElementById(`chtot-${s.id||i}`);if(ct)ct.innerHTML=rp.totalCorehours!=null?'<b>'+rp.totalCorehours.toLocaleString()+'</b>':na;
     const st=document.getElementById(`sttot-${s.id||i}`);if(st)st.innerHTML=rp.totalStorage!==null?'<b>'+rp.totalStorage.toLocaleString()+'</b>':na;
   });
 }

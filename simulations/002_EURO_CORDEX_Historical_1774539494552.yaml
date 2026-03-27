@@ -1,6 +1,6 @@
 id: '002'
 project: EURO-CORDEX
-experiment: Historical
+experiment: Historical (CMIP6)
 domain: EUR-CORDEX
 spatial_resolution: 0.11° - 12 Km
 period:
@@ -13,11 +13,11 @@ ic_lbc: CMCC-CM2-SR5
 parent_sim_id: null
 status: Completed
 compute:
-  supercomputer: Cassandra
+  supercomputer: Juno
   cores: 1536
   timestep_s: 25
   relaxation_zone_pts: 23
-  run_time_1month_h: 2
+  run_time_1month_h: 1.08
   output_frequency: 1 hr - 3 hr - 6 hr
   size_1month_gb: 12
 actual_start_date: '2025-01-01'
@@ -30,5 +30,5 @@ domain_map_url: null
 metadata:
   created_by: marioRaffa
   created_at: '2026-03-26'
-  updated_at: '2026-03-26'
+  updated_at: '2026-03-27'
   updated_by: marioRaffa

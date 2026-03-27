@@ -17,7 +17,7 @@ compute:
   cores: 1536
   timestep_s: 25
   relaxation_zone_pts: 23
-  run_time_1month_h: 1.08
+  run_time_1month_h: 0.5
   output_frequency: 1 hr - 3 hr - 6 hr
   size_1month_gb: 426
 actual_start_date: '2025-01-01'

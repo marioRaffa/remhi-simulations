@@ -330,20 +330,7 @@ function calcProgress(s){
   const sizepm=s.compute?.size_1month_gb||null;
   const totalCorehours=cphm&&totalMonths?Math.round(cphm*totalMonths):null;
   const totalStorage=sizepm&&totalMonths?Math.round(sizepm*totalMonths):null;
-  const startDate=s.actual_start_date?new Date(s.actual_start_date):null;
-  if(!startDate||!totalMonths)
-    return {pct:null,monthsElapsed:null,totalMonths,corehoursUsed:null,
-            storageUsed:null,totalCorehours,totalStorage,estimatedEnd:null};
-  const today=new Date();
-  const msPerMonth=1000*60*60*24*30.44;
-  const monthsElapsed=Math.max(0,Math.min((today-startDate)/msPerMonth,totalMonths));
-  const pct=Math.round((monthsElapsed/totalMonths)*100);
-  const corehoursUsed=cphm?Math.round(cphm*monthsElapsed):null;
-  const storageUsed=sizepm?Math.round(sizepm*monthsElapsed):null;
-  const estEnd=new Date(startDate.getTime()+totalMonths*msPerMonth);
-  const estimatedEnd=estEnd.toISOString().split('T')[0];
-  return {pct,monthsElapsed:Math.round(monthsElapsed*10)/10,totalMonths,
-          corehoursUsed,storageUsed,totalCorehours,totalStorage,estimatedEnd};
+  return {totalMonths,totalYears,totalCorehours,totalStorage};
 }
 
 function totalYears(s){
@@ -603,7 +590,7 @@ function renderTable(sims){
     // Fill totals
     const rp=calcProgress(s);
     const na='<span style="color:#ccc">—</span>';
-    const ct=document.getElementById(`chtot-${s.id||i}`);if(ct)ct.innerHTML=rp.totalCorehours!==null?'<b>'+rp.totalCorehours.toLocaleString()+'</b> h':na;
+    const ct=document.getElementById(`chtot-${s.id||i}`);if(ct)ct.innerHTML=rp.totalCorehours!=null?'<b>'+rp.totalCorehours.toLocaleString()+'</b> h':na;
     const st=document.getElementById(`sttot-${s.id||i}`);if(st)st.innerHTML=rp.totalStorage!==null?'<b>'+rp.totalStorage.toLocaleString()+'</b>':na;
   });
 }
@@ -645,32 +632,20 @@ function openModal(s){
         }
         return fi('IC/LBC (direct)',s.ic_lbc);
       })()}
-      ${sec('Progress & timeline')}
+      ${sec('Simulation estimates')}
       ${(()=>{
         const r=calcProgress(s);
-        if(!s.completed_year_month) return fi('Progress','No actual start date set — enter Actual start date to track progress','span3');
-        const color=r.pct>=100?'#70AD47':r.pct>=60?'#4472C4':r.pct>=30?'#BF8F00':'#ED7D31';
-        return `<div class="mi span3"><label>Simulation progress</label>
-          <div style="margin-top:4px">
-            <div style="background:#e5e7eb;border-radius:20px;height:10px;overflow:hidden">
-              <div style="width:${Math.min(r.pct,100)}%;height:10px;background:${color};border-radius:20px"></div>
-            </div>
-            <div style="font-size:11px;font-weight:600;color:${color};margin-top:4px">
-              ${r.pct}% elapsed — ${r.monthsElapsed??0} of ${r.totalMonths} months
-            </div>
-          </div></div>
-        <div class="mi span3" style="background:#f0f4ff;border-radius:8px;padding:12px 14px;line-height:1.8">
-          <label>Simulation estimates — ${totalYears(s)} yr / ${r.totalMonths} months</label>
+        return `<div class="mi span3" style="background:#f0f4ff;border-radius:8px;padding:12px 14px;line-height:1.8">
+          <label>Full period — ${totalYears(s)} yr / ${r.totalMonths} months</label>
           <span>${[
             r.totalCorehours!=null?'⚡ '+r.totalCorehours.toLocaleString()+' core-hrs total':null,
-            r.totalStorage!=null?'💾 '+r.totalStorage.toLocaleString()+' GB total':null,
-            r.corehoursUsed!=null?'Used: '+r.corehoursUsed.toLocaleString()+' core-hrs'+(r.storageUsed!=null?' / '+r.storageUsed.toLocaleString()+' GB':''):null
-          ].filter(Boolean).join(' · ')}</span>
+            r.totalStorage!=null?'💾 '+r.totalStorage.toLocaleString()+' GB total':null
+          ].filter(Boolean).join(' &nbsp;·&nbsp; ')||'—'}</span>
         </div>`;
       })()}
       ${(()=>{const cphm=calcCorehoursPerMonth(s);return fi('Core-hrs/month (auto)',cphm?cphm.toLocaleString()+' h':'—')})()}
-      ${fi('Actual start date', s.actual_start_date)}
-      ${fi('Actual start date', s.actual_start_date)}
+      ${fi('Actual start date (estimate)', s.actual_start_date)}
+      ${fi('Expected completion (estimate)', s.delivery_deadline)}
       ${sec('Compute')}
       ${fi('Supercomputer', c.supercomputer)}
       ${fi('Cores', c.cores)}
@@ -806,7 +781,6 @@ function updateCphmPreview(){
   const sizepm  = parseFloat(document.getElementById('a-size')?.value)||0;
   const startYear = parseInt(document.getElementById('a-start')?.value)||0;
   const endYear   = parseInt(document.getElementById('a-end')?.value)||0;
-  const startDate = document.getElementById('a-actualstart')?.value;
   const prev    = document.getElementById('cphm-preview');
   const cphmDisplay = document.getElementById('a-cphm-display');
   const cphm = (cores&&rt) ? Math.round(cores*rt) : 0;
@@ -820,27 +794,11 @@ function updateCphmPreview(){
   if(totalMonths>0&&(cphm||sizepm)){
     const totalCH=cphm?Math.round(cphm*totalMonths):null;
     const totalST=sizepm?Math.round(sizepm*totalMonths):null;
-    let progressHtml='';
-    if(startDate&&totalMonths){
-      const today=new Date(), start=new Date(startDate);
-      const msPerMonth=1000*60*60*24*30.44;
-      const elapsed=Math.max(0,Math.min((today-start)/msPerMonth,totalMonths));
-      const pct=Math.min(100,Math.round((elapsed/totalMonths)*100));
-      const usedCH=cphm?Math.round(cphm*elapsed):null;
-      const usedST=sizepm?Math.round(sizepm*elapsed):null;
-      const color=pct>=100?'#375623':pct>=60?'#1F3864':pct>=30?'#854F0B':'#833C00';
-      progressHtml=`<div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(0,0,0,.08)">
-        <span style="font-weight:700;color:${color}">${pct}% elapsed (${Math.round(elapsed)}/${totalMonths} months)</span>
-        ${usedCH!=null?`<br>⚡ ${usedCH.toLocaleString()} / ${totalCH.toLocaleString()} core-hrs`:''}
-        ${usedST!=null?`<br>💾 ${usedST.toLocaleString()} / ${totalST.toLocaleString()} GB`:''}
-      </div>`;
-    }
     prev.style.background='#f0f4ff'; prev.style.color='#1F3864';
     prev.innerHTML=
       `<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;color:#888">Simulation estimates — ${totalYears} yr / ${totalMonths} months</div>`+
       (totalCH!=null?`<span style="font-weight:600">⚡ ${totalCH.toLocaleString()} core-hrs total</span><br>`:'')+
-      (totalST!=null?`<span style="font-weight:600">💾 ${totalST.toLocaleString()} GB total storage</span>`:'')+
-      progressHtml;
+      (totalST!=null?`<span style="font-weight:600">💾 ${totalST.toLocaleString()} GB total</span>`:'');
   } else {
     prev.style.background='#f4f6f9'; prev.style.color='#aaa';
     prev.innerHTML='Enter Start year, End year, Cores and Run time 1month to see estimates';

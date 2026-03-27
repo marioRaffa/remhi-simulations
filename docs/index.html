@@ -569,6 +569,7 @@ function renderTable(sims){
       <td style="white-space:nowrap">${s.delivery_deadline
         ?`<span style="background:#FFF2CC;color:#BF8F00;padding:2px 7px;border-radius:10px;font-weight:600;font-size:11px">${s.delivery_deadline}</span>`
         :''}</td>
+      <td style="font-size:10px;color:#888;max-width:150px" onclick="event.stopPropagation()">${s.work_path?s.work_path:'<span style=\"color:#ccc\">—</span>'}</td>
       <td style="white-space:nowrap">
         <button class="action-btn btn-edit" onclick="openEdit('${s._file}','${s._sha}')">✏️ Edit</button>
         <button class="action-btn btn-del"  onclick="deleteSim('${s._file}','${s._sha}','${s.id||''}')">🗑️</button>

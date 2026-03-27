@@ -175,7 +175,7 @@ tr:hover td{background:#fafbff}
         <thead><tr>
           <th title="IDs are permanent — gaps after deletion are expected">#</th><th>Project</th><th>Experiment</th><th>Domain</th>
           <th>Resolution</th><th>Period</th><th>RCM</th><th>IC/LBC</th><th>Status</th>
-          <th>Supercomputer</th><th>Cores</th><th>Size 1m [GB]</th><th>⚡ Total est. [core-hrs]</th><th>💾 Total est. [GB]</th><th>👤 Added by</th><th>📧 Contact</th><th>🏁 Exp. completion</th><th>📁 Work path</th><th>Actions</th>
+          <th>Supercomputer</th><th>Cores</th><th>Size 1m [GB]</th><th>⚡ Total est. [core-hrs]</th><th>💾 Total est. [GB]</th><th>👤 Added by</th><th>📧 Contact</th><th>🏁 Exp. completion</th><th title="Work path">📁</th><th>Actions</th>
         </tr></thead>
         <tbody id="db-body"><tr><td colspan="19" class="loading">Loading…</td></tr></tbody>
       </table>
@@ -569,7 +569,10 @@ function renderTable(sims){
       <td style="white-space:nowrap">${s.delivery_deadline
         ?`<span style="background:#FFF2CC;color:#BF8F00;padding:2px 7px;border-radius:10px;font-weight:600;font-size:11px">${s.delivery_deadline}</span>`
         :''}</td>
-      <td style="font-size:10px;color:#888;max-width:150px" onclick="event.stopPropagation()">${s.work_path?s.work_path:'<span style=\"color:#ccc\">—</span>'}</td>
+      <td style="text-align:center" onclick="event.stopPropagation()">${s.work_path
+        ?`<button onclick="navigator.clipboard.writeText('${s.work_path}').then(()=>{this.title='Copied!';setTimeout(()=>this.title='${s.work_path}',1500)})"
+            style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px" title="${s.work_path}">📁</button>`
+        :'<span style="color:#ddd;font-size:12px">—</span>'}</td>
       <td style="white-space:nowrap">
         <button class="action-btn btn-edit" onclick="openEdit('${s._file}','${s._sha}')">✏️ Edit</button>
         <button class="action-btn btn-del"  onclick="deleteSim('${s._file}','${s._sha}','${s.id||''}')">🗑️</button>

@@ -13,7 +13,7 @@ ic_lbc: ERA5
 parent_sim_id: null
 status: Completed
 compute:
-  supercomputer: Cassandra
+  supercomputer: Juno
   cores: 1296
   timestep_s: 25
   relaxation_zone_pts: 23

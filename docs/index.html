@@ -201,7 +201,7 @@ tr:hover td{background:#fafbff}
         <div class="field"><label>Project</label><select id="a-project"></select></div>
         <div class="field"><label>Experiment</label>
           <select id="a-experiment" onchange="updateLbcList()"></select></div>
-        <div class="field"><label>Domain</label><select id="a-domain"></select></div>
+        <div class="field"><label>Domain</label><select id="a-domain" onchange="autoFillDomainUrl()"></select></div>
       </div>
       <div class="form-grid">
         <div class="field"><label>Spin-up year</label>
@@ -294,9 +294,15 @@ tr:hover td{background:#fafbff}
       </div>
       <div class="form-grid">
         <div class="field" style="grid-column:span 3">
-          <label>🗺️ Domain map URL</label>
-          <input type="text" id="a-mapurl" placeholder="https://… (link to domain image)">
-          <div style="font-size:10px;color:#888;margin-top:3px">Link to a domain map image (optional)</div>
+          <label>🗺️ Domain map / reference</label>
+          <div id="mapurl-auto" style="font-size:11px;color:#1F6B75;margin-bottom:4px;display:none">
+            ✅ Official CORDEX page auto-linked — or override below
+          </div>
+          <input type="text" id="a-mapurl" placeholder="https://… (leave empty for auto CORDEX link, or enter custom image URL)">
+          <div style="font-size:10px;color:#888;margin-top:3px">
+            Standard CORDEX domains: official page linked automatically.<br>
+            Custom domain: paste a direct image URL.
+          </div>
           <div id="map-preview" style="margin-top:8px"></div>
         </div>
       </div>
@@ -347,6 +353,24 @@ function calcCorehoursPerMonth(s){
   return s.corehours_per_month||null; // fallback for old data
 }
 
+
+// CORDEX official domain URLs
+const CORDEX_DOMAIN_URLS={
+  'EUR-CORDEX':  'https://cordex.org/domains/cordex-region-euro-cordex/',
+  'AFR-CORDEX':  'https://cordex.org/domains/cordex-region-africa/',
+  'NAM-CORDEX':  'https://cordex.org/domains/cordex-region-north-america/',
+  'SAM-CORDEX':  'https://cordex.org/domains/cordex-region-south-america/',
+  'CAM-CORDEX':  'https://cordex.org/domains/cordex-region-central-america/',
+  'MED-CORDEX':  'https://cordex.org/domains/cordex-region-med-cordex/',
+  'MNA-CORDEX':  'https://cordex.org/domains/cordex-region-middle-east-and-north-africa/',
+  'WAS-CORDEX':  'https://cordex.org/domains/cordex-region-south-asia/',
+  'EAS-CORDEX':  'https://cordex.org/domains/cordex-region-east-asia/',
+  'SEA-CORDEX':  'https://cordex.org/domains/cordex-region-south-east-asia/',
+  'CAS-CORDEX':  'https://cordex.org/domains/cordex-region-central-asia/',
+  'AUS-CORDEX':  'https://cordex.org/domains/cordex-region-australasia/',
+  'ARC-CORDEX':  'https://cordex.org/domains/cordex-region-arctic/',
+  'ANT-CORDEX':  'https://cordex.org/domains/cordex-region-antarctica/',
+};
 
 const STATUS_COLORS={'Completed':'#70AD47','Ongoing':'#4472C4','Planned':'#BF8F00','NOT Planned':'#C00000','Paused':'#808080','Failed':'#C55A11'};
 const STATUS_BG={'Completed':'#E2EFDA','Ongoing':'#D9E1F2','Planned':'#FFF2CC','NOT Planned':'#FFDCE0','Paused':'#F2F2F2','Failed':'#FCE4D6'};
@@ -729,6 +753,22 @@ function updateLbcList(keepVal){
   opts.forEach(v=>{const o=document.createElement('option');o.value=o.textContent=v;if(v===cur)o.selected=true;sel.appendChild(o);});
 }
 
+function autoFillDomainUrl(){
+  const domain=document.getElementById('a-domain')?.value;
+  const mapUrl=document.getElementById('a-mapurl');
+  const autoNote=document.getElementById('mapurl-auto');
+  if(!mapUrl||!autoNote) return;
+  const cordexUrl=CORDEX_DOMAIN_URLS[domain]||null;
+  if(cordexUrl&&!mapUrl.value){
+    // Only auto-fill if user hasn't typed a custom URL
+    mapUrl.placeholder='Auto: '+cordexUrl;
+    autoNote.style.display='block';
+  } else if(!cordexUrl){
+    mapUrl.placeholder='https://… (direct image URL for custom domain)';
+    autoNote.style.display='none';
+  }
+}
+
 function updateNestingUI(){
   const nesttype=document.getElementById('a-nesttype')?.value;
   const fieldLbc=document.getElementById('field-lbc');
@@ -772,6 +812,7 @@ function openAddForm(el){
   document.getElementById('field-parent').style.display='none';
   setVal('a-deadline','');
   setVal('a-mapurl','');
+  const _an=document.getElementById('mapurl-auto');if(_an)_an.style.display='none';
   document.getElementById('map-preview').innerHTML='';
   document.getElementById('form-title').textContent='Add simulation';
   document.getElementById('form-badge').textContent='NEW';
@@ -855,6 +896,7 @@ function openEdit(filename,sha){
   setVal('a-deadline',sim.delivery_deadline||'');
   setVal('a-actualstart',sim.actual_start_date||'');
   setVal('a-mapurl',sim.domain_map_url||'');
+  autoFillDomainUrl();
   updateCphmPreview();
   // Trigger map preview
   const mapPrev=document.getElementById('map-preview');
@@ -960,7 +1002,12 @@ async function saveSimulation(){
     added_by:ghUserName||ghUserLogin||document.getElementById('a-addedby').value||null,
     contact_email:document.getElementById('a-email').value||null,
     delivery_deadline:document.getElementById('a-deadline').value||null,
-    domain_map_url:document.getElementById('a-mapurl').value||null,
+    domain_map_url:(()=>{
+      const manual=document.getElementById('a-mapurl').value||'';
+      if(manual) return manual;
+      const domain=document.getElementById('a-domain').value;
+      return CORDEX_DOMAIN_URLS[domain]||null;
+    })(),
     metadata:{
       created_by:existingSim?.metadata?.created_by||ghUserLogin||ghUserName||'dashboard',
       created_at:existingSim?.metadata?.created_at||today,

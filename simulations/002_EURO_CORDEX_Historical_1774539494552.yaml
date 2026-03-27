@@ -21,7 +21,7 @@ compute:
   output_frequency: 1 hr - 3 hr - 6 hr
   size_1month_gb: 426
 actual_start_date: '2025-01-01'
-work_path: ''
+work_path: /work/cmcc/mr29116/CORDEX/EUROCORDEX/historical
 notes: ''
 added_by: marioRaffa
 contact_email: mario.raffa@cmcc.it

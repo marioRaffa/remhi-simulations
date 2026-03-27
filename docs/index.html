@@ -175,9 +175,9 @@ tr:hover td{background:#fafbff}
         <thead><tr>
           <th title="IDs are permanent — gaps after deletion are expected">#</th><th>Project</th><th>Experiment</th><th>Domain</th>
           <th>Resolution</th><th>Period</th><th>RCM</th><th>IC/LBC</th><th>Status</th>
-          <th>Supercomputer</th><th>Cores</th><th>Size 1m [GB]</th><th>⚡ Total est. [core-hrs]</th><th>💾 Total est. [GB]</th><th>👤 Added by</th><th>📧 Contact</th><th>🏁 Exp. completion</th><th>Actions</th>
+          <th>Supercomputer</th><th>Cores</th><th>Size 1m [GB]</th><th>⚡ Total est. [core-hrs]</th><th>💾 Total est. [GB]</th><th>👤 Added by</th><th>📧 Contact</th><th>🏁 Exp. completion</th><th>📁 Work path</th><th>Actions</th>
         </tr></thead>
-        <tbody id="db-body"><tr><td colspan="18" class="loading">Loading…</td></tr></tbody>
+        <tbody id="db-body"><tr><td colspan="19" class="loading">Loading…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -383,7 +383,7 @@ async function ghDelete(path,sha,msg){
 async function loadData(){
   showError('');
   document.getElementById('sim-count').textContent='Loading…';
-  document.getElementById('db-body').innerHTML='<tr><td colspan="18" class="loading">Loading simulations…</td></tr>';
+  document.getElementById('db-body').innerHTML='<tr><td colspan="19" class="loading">Loading simulations…</td></tr>';
   const saved=localStorage.getItem('gh_token');
   if(saved) document.getElementById('gh-token').value=saved;
   try{
@@ -528,7 +528,7 @@ function renderCharts(sims){
 function renderTable(sims){
   if(!sims.length){
     document.getElementById('db-body').innerHTML=
-      '<tr><td colspan="18" style="text-align:center;padding:30px;color:#aaa">No simulations match the filters</td></tr>';
+      '<tr><td colspan="19" style="text-align:center;padding:30px;color:#aaa">No simulations match the filters</td></tr>';
     return;
   }
   const tbody=document.getElementById('db-body');

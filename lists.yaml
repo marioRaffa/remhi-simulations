@@ -4,11 +4,16 @@
 
 experiment:
   - Evaluation
-  - Historical
-  - SSP1-2.6
-  - SSP2-4.5
-  - SSP3-7.0
-  - SSP5-8.5
+  - Historical (CMIP6)
+  - SSP1-2.6 (CMIP6)
+  - SSP2-4.5 (CMIP6)
+  - SSP3-7.0 (CMIP6)
+  - SSP5-8.5 (CMIP6)
+  - Historical (CMIP5)
+  - RCP2.6 (CMIP5)
+  - RCP4.5 (CMIP5)
+  - RCP6.0 (CMIP5)
+  - RCP8.5 (CMIP5)
 
 status:
   - Completed

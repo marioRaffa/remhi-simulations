@@ -84,7 +84,7 @@ tr:hover td{background:#fafbff}
 .modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:#aaa;line-height:1;padding:2px 6px;border-radius:4px}
 .modal-close:hover{background:#f0f0f0;color:#333}
 .modal-body{padding:20px}
-.modal-map{width:100%;max-height:320px;object-fit:contain;border-radius:8px;border:1px solid #e5e7eb;margin-bottom:16px;display:block;background:#f4f6f9}
+.modal-map{max-width:300px;max-height:300px;width:auto;height:auto;object-fit:contain;border-radius:8px;border:1px solid #e5e7eb;margin:0 auto 16px;display:block;background:#f4f6f9}
 .modal-map-ph{width:100%;height:120px;background:#f4f6f9;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:12px;margin-bottom:16px;border:1px solid #e5e7eb}
 .modal-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px 20px}
 .modal-section{font-size:10px;font-weight:700;color:#1F3864;text-transform:uppercase;letter-spacing:.06em;margin:14px 0 8px;border-top:1px solid #f0f0f0;padding-top:12px;grid-column:span 3}
@@ -296,7 +296,7 @@ tr:hover td{background:#fafbff}
         <div class="field" style="grid-column:span 3">
           <label>🗺️ Domain map / reference</label>
           <div id="mapurl-auto" style="font-size:11px;color:#1F6B75;margin-bottom:4px;display:none">
-            ✅ Official CORDEX page auto-linked — or override below
+            ✅ Official CORDEX domain image auto-linked — or paste custom URL below
           </div>
           <input type="text" id="a-mapurl" placeholder="https://… (leave empty for auto CORDEX link, or enter custom image URL)">
           <div style="font-size:10px;color:#888;margin-top:3px">
@@ -355,21 +355,22 @@ function calcCorehoursPerMonth(s){
 
 
 // CORDEX official domain URLs
+// Direct image URLs from cordex.org (wp-content uploads)
 const CORDEX_DOMAIN_URLS={
-  'EUR-CORDEX':  'https://cordex.org/domains/cordex-region-euro-cordex/',
-  'AFR-CORDEX':  'https://cordex.org/domains/cordex-region-africa/',
-  'NAM-CORDEX':  'https://cordex.org/domains/cordex-region-north-america/',
-  'SAM-CORDEX':  'https://cordex.org/domains/cordex-region-south-america/',
-  'CAM-CORDEX':  'https://cordex.org/domains/cordex-region-central-america/',
-  'MED-CORDEX':  'https://cordex.org/domains/cordex-region-med-cordex/',
-  'MNA-CORDEX':  'https://cordex.org/domains/cordex-region-middle-east-and-north-africa/',
-  'WAS-CORDEX':  'https://cordex.org/domains/cordex-region-south-asia/',
-  'EAS-CORDEX':  'https://cordex.org/domains/cordex-region-east-asia/',
-  'SEA-CORDEX':  'https://cordex.org/domains/cordex-region-south-east-asia/',
-  'CAS-CORDEX':  'https://cordex.org/domains/cordex-region-central-asia/',
-  'AUS-CORDEX':  'https://cordex.org/domains/cordex-region-australasia/',
-  'ARC-CORDEX':  'https://cordex.org/domains/cordex-region-arctic/',
-  'ANT-CORDEX':  'https://cordex.org/domains/cordex-region-antarctica/',
+  'EUR-CORDEX':  'https://cordex.org/wp-content/uploads/2012/11/images_globes_Fig4_cordex_domains_eur-300x300.png',
+  'AFR-CORDEX':  'https://cordex.org/wp-content/uploads/2012/11/images_globes_Fig5_cordex_domains_afr-300x300.png',
+  'NAM-CORDEX':  'https://cordex.org/wp-content/uploads/2012/11/images_globes_Fig3_cordex_domains_nam-300x300.png',
+  'SAM-CORDEX':  'https://cordex.org/wp-content/uploads/2012/11/images_globes_Fig1_cordex_domains_sam-300x300.png',
+  'CAM-CORDEX':  'https://cordex.org/wp-content/uploads/2012/11/images_globes_Fig2_cordex_domains_cam-300x300.png',
+  'MED-CORDEX':  'https://cordex.org/wp-content/uploads/2012/11/images_globes_Fig12_cordex_domains_med-300x300.png',
+  'MNA-CORDEX':  'https://cordex.org/wp-content/uploads/2012/11/images_globes_Fig13_cordex_domains_mna-300x300.png',
+  'WAS-CORDEX':  'https://cordex.org/wp-content/uploads/2012/11/images_globes_Fig6_cordex_domains_was-300x300.png',
+  'EAS-CORDEX':  'https://cordex.org/wp-content/uploads/2012/11/images_globes_Fig7_cordex_domains_eas-300x300.png',
+  'SEA-CORDEX':  'https://cordex.org/wp-content/uploads/2012/11/images_globes_Fig14_cordex_domains_sea-300x300.png',
+  'CAS-CORDEX':  'https://cordex.org/wp-content/uploads/2012/11/images_globes_Fig8_cordex_domains_cas-300x300.png',
+  'AUS-CORDEX':  'https://cordex.org/wp-content/uploads/2012/11/images_globes_Fig9_cordex_domains_aus-300x300.png',
+  'ARC-CORDEX':  'https://cordex.org/wp-content/uploads/2012/11/images_globes_Fig11_cordex_domains_arc-300x300.png',
+  'ANT-CORDEX':  'https://cordex.org/wp-content/uploads/2012/11/images_globes_Fig10_cordex_domains_ant-300x300.png',
 };
 
 const STATUS_COLORS={'Completed':'#70AD47','Ongoing':'#4472C4','Planned':'#BF8F00','NOT Planned':'#C00000','Paused':'#808080','Failed':'#C55A11'};

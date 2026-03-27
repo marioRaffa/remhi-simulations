@@ -51,6 +51,8 @@ tr:hover td{background:#fafbff}
 .action-btn{font-size:11px;padding:3px 8px;border-radius:4px;cursor:pointer;border:none;font-weight:600;margin-right:4px}
 .btn-edit{background:#EEF2FF;color:#1F3864;border:1px solid #C7D2FE}
 .btn-edit:hover{background:#1F3864;color:#fff}
+.btn-info{background:#F0F4FF;color:#1F3864;border:1px solid #C7D2FE}
+.btn-info:hover{background:#1F3864;color:#fff}
 .btn-del{background:#FFF0F0;color:#C00000;border:1px solid #FCC}
 .btn-del:hover{background:#C00000;color:#fff}
 .form-card{background:#fff;border-radius:10px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
@@ -574,6 +576,7 @@ function renderTable(sims){
             style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px" title="${s.work_path}">📁</button>`
         :'<span style="color:#ddd;font-size:12px">—</span>'}</td>
       <td style="white-space:nowrap">
+        <button class="action-btn btn-info" onclick="openModal(allSims.find(x=>x._file==='${s._file}'))">👁</button>
         <button class="action-btn btn-edit" onclick="openEdit('${s._file}','${s._sha}')">✏️ Edit</button>
         <button class="action-btn btn-del"  onclick="deleteSim('${s._file}','${s._sha}','${s.id||''}')">🗑️</button>
       </td>`;
@@ -895,7 +898,7 @@ async function saveSimulation(){
   }
   for(const [id,label] of required){
     const val=document.getElementById(id).value;
-    if(!val||val===''){
+    if(!val||val===''||val==='—'){
       document.getElementById('form-msg').innerHTML=
         `<div class="error">⚠️ Please fill in the required field: <b>${label}</b></div>`;
       return;
@@ -903,14 +906,14 @@ async function saveSimulation(){
   }
   // Soft permission check before saving
   if(editingFile){
-    const existing=allSims.find(s=>s._file===editingFile);
-    if(existing&&existing.added_by&&ghUserName){
-      const ab=existing.added_by.toLowerCase();
-      const cb=existing.metadata?.created_by?.toLowerCase()||'';
+    const _existPerm=allSims.find(s=>s._file===editingFile);
+    if(_existPerm&&_existPerm.added_by&&ghUserName){
+      const ab=_existPerm.added_by.toLowerCase();
+      const cb=_existPerm.metadata?.created_by?.toLowerCase()||'';
       const un=ghUserName.toLowerCase(), ul=ghUserLogin.toLowerCase();
       if(ab!==un&&ab!==ul&&cb!==un&&cb!==ul){
         document.getElementById('form-msg').innerHTML=
-          '<div class="error">⚠️ Permission denied: only <b>'+existing.added_by+'</b> can edit this simulation.</div>';
+          '<div class="error">⚠️ Permission denied: only <b>'+_existPerm.added_by+'</b> can edit this simulation.</div>';
         return;
       }
     }
@@ -967,7 +970,7 @@ async function saveSimulation(){
   };
   const slug=isEdit
     ?editingFile.replace('.yaml','')
-    :`${nextId}_${proj.replace(/[^a-zA-Z0-9]/g,'_').slice(0,20)}_${exp.replace(/[^a-zA-Z0-9]/g,'_')}_${Date.now()}`;
+    :`${nextId}_${proj.replace(/[^a-zA-Z0-9]/g,'_').slice(0,20)}_${exp.replace(/[^a-zA-Z0-9]/g,'_')}`;
   const filePath=`simulations/${slug}.yaml`;
   const yamlStr=jsyaml.dump(sim,{lineWidth:-1});
     const content=btoa(encodeURIComponent(yamlStr).replace(/%([0-9A-Fa-f]{2})/g,(_,p)=>String.fromCharCode(parseInt(p,16))));

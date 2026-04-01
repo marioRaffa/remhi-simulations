@@ -14,14 +14,14 @@ parent_sim_id: null
 status: Completed
 compute:
   supercomputer: Juno
-  cores: null
+  cores: 1152
   timestep_s: 25
   relaxation_zone_pts: 23
-  run_time_1month_h: null
+  run_time_1month_h: 0.9
   output_frequency: 1 hr - 3 hr - 6 hr
-  size_1month_gb: null
+  size_1month_gb: 465
 actual_start_date: '2025-01-01'
-work_path: ''
+work_path: /work/cmcc/ac06322/ICON/ICON_clm/spice-v2.2_test/chain/gcm2icon/URB12
 notes: no published in  eurocordex evaluation run
 added_by: marioRaffa
 contact_email: mario.raffa@cmcc.it

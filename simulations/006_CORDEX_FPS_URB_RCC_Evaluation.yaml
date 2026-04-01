@@ -2,7 +2,7 @@ id: '006'
 project: CORDEX-FPS URB-RCC
 experiment: Evaluation
 domain: FRANCE
-spatial_resolution: ''
+spatial_resolution: 0.0275° - 3 Km
 period:
   spin_up: 1979
   start: 1980

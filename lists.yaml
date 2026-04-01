@@ -37,6 +37,7 @@ project:
 domain:
   - ITALY
   - ALPS
+  - FRANCE
   - EUR-CORDEX
   - AFR-CORDEX
   - NAM-CORDEX

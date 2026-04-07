@@ -1,0 +1,34 @@
+id: '007'
+project: ALPAERA
+experiment: Historical (CMIP6)
+domain: ALPS
+spatial_resolution: 0.0275° - 3 Km
+period:
+  spin_up: 2009
+  start: 2010
+  end: 2019
+rcm_model: CCLM
+nesting_type: intermediate
+ic_lbc: sim:002 — Historical (CMIP6) EUR-CORDEX
+parent_sim_id: '002'
+status: Completed
+compute:
+  supercomputer: Cassandra
+  cores: 2240
+  timestep_s: 25
+  relaxation_zone_pts: 23
+  run_time_1month_h: 2
+  output_frequency: 1 hr - 3 hr - 6 hr
+  size_1month_gb: null
+actual_start_date: '2025-01-01'
+work_path: /work/cmcc/mr29116/ALCOTRA_ALPAERA/ALCOTRA/historical/
+notes: ''
+added_by: marioRaffa
+contact_email: mario.raffa@cmcc.it
+delivery_deadline: '2025-12-31'
+domain_map_url: null
+metadata:
+  created_by: marioRaffa
+  created_at: '2026-04-07'
+  updated_at: '2026-04-07'
+  updated_by: marioRaffa

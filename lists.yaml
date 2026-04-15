@@ -32,6 +32,8 @@ project:
   - CORDEX CORE (FUTURA)
   - EURO-CORDEX
   - CORDEX-FPS URB-RCC
+  - RISING
+  - HYRAD4CC
   - no project
 
 domain:

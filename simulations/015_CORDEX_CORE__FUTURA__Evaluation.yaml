@@ -2,7 +2,7 @@ id: '015'
 project: CORDEX CORE (FUTURA)
 experiment: Evaluation
 domain: CAM-CORDEX
-spatial_resolution: '0.11'
+spatial_resolution: 0.11 - 12 km
 period:
   spin_up: 1
   start: 2012
@@ -26,7 +26,7 @@ notes: 'Four simulations available: reference + 3 perturbed setups'
 added_by: Alejandro Vichot Llano
 contact_email: alejandro.vichot@cmcc.it
 delivery_deadline: '2026-04-05'
-domain_map_url: https://cordex.org/domains/cordex-region-central-america-cordex/
+domain_map_url: https://cordex.org/wp-content/uploads/2012/11/images_globes_Fig2_cordex_domains_cam-300x300.png
 metadata:
   created_by: avichotllano
   created_at: '2026-04-16'

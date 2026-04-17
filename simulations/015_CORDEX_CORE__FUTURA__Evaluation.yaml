@@ -17,7 +17,7 @@ compute:
   cores: 1344
   timestep_s: 25
   relaxation_zone_pts: 23
-  run_time_1month_h: 10
+  run_time_1month_h: 3
   output_frequency: 1 hr - 3 hr - 6 hr
   size_1month_gb: 168
 actual_start_date: '2026-03-31'
@@ -30,5 +30,5 @@ domain_map_url: https://cordex.org/wp-content/uploads/2012/11/images_globes_Fig2
 metadata:
   created_by: avichotllano
   created_at: '2026-04-16'
-  updated_at: '2026-04-16'
+  updated_at: '2026-04-17'
   updated_by: avichotllano

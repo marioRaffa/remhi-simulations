@@ -19,7 +19,7 @@ compute:
   relaxation_zone_pts: 23
   run_time_1month_h: 3
   output_frequency: 1 hr - 3 hr - 6 hr
-  size_1month_gb: 168
+  size_1month_gb: 643
 actual_start_date: '2026-03-31'
 work_path: /work/cmcc/av03024/GANANA/ICON-CLM/spice-v2.3/chain/gcm2icon/CAMCTRE
 notes: 'Four simulations available: reference + 3 perturbed setups'

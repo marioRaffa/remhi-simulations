@@ -23,7 +23,7 @@ compute:
 actual_start_date: '2026-02-09'
 work_path: /work/cmcc/so03825/ICON/spice-v2.3/chain/gcm2icon/AFR_EXP_ERA
 notes: |-
-  This is just one experiment; similar estimates can be performed for all the tests (6 so far)
+  This is just one experiment; similar estimates can be performed for all the tests (6 so far)-
   size arch 568G, size post 237G
 added_by: StefaniaOliva
 contact_email: stefania.oliva@cmcc.it

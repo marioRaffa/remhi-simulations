@@ -19,10 +19,12 @@ compute:
   relaxation_zone_pts: 23
   run_time_1month_h: 3.6
   output_frequency: 1 hr - 3 hr - 6 hr
-  size_1month_gb: 800
+  size_1month_gb: 805
 actual_start_date: '2026-02-09'
 work_path: /work/cmcc/so03825/ICON/spice-v2.3/chain/gcm2icon/AFR_EXP_ERA
-notes: This is just one experiment; similar estimates can be performed for all the tests (6 so far)
+notes: |-
+  This is just one experiment; similar estimates can be performed for all the tests (6 so far)
+  size arch 568G, size post 237G
 added_by: StefaniaOliva
 contact_email: stefania.oliva@cmcc.it
 delivery_deadline: '2026-02-13'
@@ -30,5 +32,5 @@ domain_map_url: https://cordex.org/wp-content/uploads/2017/11/Fig5_cordex_domain
 metadata:
   created_by: stefaniaoliva-hub
   created_at: '2026-04-16'
-  updated_at: '2026-04-16'
+  updated_at: '2026-04-20'
   updated_by: stefaniaoliva-hub

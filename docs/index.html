@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REMHI Monitoring</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f6f9;color:#1a1a2e;font-size:14px}
+.shell{display:flex;min-height:100vh}
+.sidebar{width:220px;min-width:220px;background:#1F3864;display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100}
+.main{margin-left:220px;flex:1;padding:20px;min-height:100vh}
+.sb-title{padding:18px 16px 12px;border-bottom:1px solid rgba(255,255,255,.1)}
+.sb-title h2{color:#fff;font-size:15px;font-weight:600}
+.sb-title p{color:rgba(255,255,255,.5);font-size:11px;margin-top:3px}
+.sb-section{padding:14px 16px 4px;color:rgba(255,255,255,.4);font-size:10px;text-transform:uppercase;letter-spacing:.08em}
+.sb-filter{padding:4px 16px 10px}
+.sb-filter label{color:rgba(255,255,255,.65);font-size:11px;display:block;margin-bottom:4px}
+.sb-filter select{width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:12px;padding:5px 8px;border-radius:5px;outline:none;cursor:pointer}
+.sb-filter select option{background:#1F3864;color:#fff}
+.sb-bottom{margin-top:auto;padding:14px 16px;border-top:1px solid rgba(255,255,255,.1)}
+.sb-token{width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:11px;padding:5px 8px;border-radius:5px;outline:none;margin-top:4px}
+.sb-token::placeholder{color:rgba(255,255,255,.35)}
+.btn-sm{width:100%;margin-top:6px;padding:6px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:5px;cursor:pointer;font-size:11px}
+.btn-sm:hover{background:rgba(255,255,255,.25)}
+.topbar{background:#fff;border-radius:10px;padding:14px 20px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 3px rgba(0,0,0,.07)}
+.topbar h1{font-size:18px;font-weight:600;color:#1F3864}
+.topbar span{font-size:12px;color:#888}
+.tabs{display:flex;gap:4px;margin-bottom:16px}
+.tab{padding:8px 18px;border-radius:7px;cursor:pointer;font-size:13px;color:#666;background:#fff;border:1px solid #e5e7eb;transition:all .15s}
+.tab.active{background:#1F3864;color:#fff;border-color:#1F3864}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px}
+.kpi{background:#fff;border-radius:10px;padding:14px 16px;border-left:4px solid;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.kpi-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.kpi-val{font-size:28px;font-weight:600}
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.charts-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.chart-card{background:#fff;border-radius:10px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.chart-card h3{font-size:12px;font-weight:600;color:#666;margin-bottom:12px;text-transform:uppercase;letter-spacing:.04em}
+.table-wrap{background:#fff;border-radius:10px;overflow-x:auto;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+table{width:100%;border-collapse:collapse}
+th{background:#f8f9fa;font-size:11px;font-weight:600;text-align:left;padding:10px 12px;color:#555;border-bottom:2px solid #e5e7eb;white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid #f0f0f0;font-size:12px;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafbff}
+.badge{display:inline-flex;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.action-btn{font-size:11px;padding:3px 8px;border-radius:4px;cursor:pointer;border:none;font-weight:600;margin-right:4px}
+.btn-edit{background:#EEF2FF;color:#1F3864;border:1px solid #C7D2FE}
+.btn-edit:hover{background:#1F3864;color:#fff}
+.btn-info{background:#F0F4FF;color:#1F3864;border:1px solid #C7D2FE}
+.btn-info:hover{background:#1F3864;color:#fff}
+.btn-del{background:#FFF0F0;color:#C00000;border:1px solid #FCC}
+.btn-del:hover{background:#C00000;color:#fff}
+.form-card{background:#fff;border-radius:10px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.form-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.form-header h2{font-size:16px;font-weight:600;color:#1F3864}
+.form-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}
+.field label{font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em}
+.field input,.field select,.field textarea{width:100%;padding:7px 10px;font-size:13px;border:1px solid #e5e7eb;border-radius:6px;outline:none;background:#fafbff;color:#1a1a2e;transition:border .15s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:#1F3864}
+.form-section{font-size:11px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:.05em;margin:16px 0 10px;border-top:1px solid #f0f0f0;padding-top:14px}
+.btn-row{display:flex;gap:10px;margin-top:14px;align-items:center}
+.btn-primary{background:#1F3864;color:#fff;border:none;padding:10px 24px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer}
+.btn-primary:hover{background:#162d50}
+.btn-primary:disabled{background:#aaa;cursor:not-allowed}
+.btn-cancel{background:#fff;color:#666;border:1px solid #ddd;padding:10px 18px;border-radius:7px;font-size:13px;cursor:pointer}
+.btn-cancel:hover{background:#f5f5f5}
+.loading{text-align:center;padding:60px;color:#888;font-size:14px}
+.error{background:#fff0f0;border:1px solid #fcc;border-radius:8px;padding:14px;color:#c00;font-size:13px;margin-bottom:14px}
+.success{background:#f0fff0;border:1px solid #9d9;border-radius:8px;padding:12px;color:#060;font-size:13px;margin-bottom:12px}
+.info{background:#f0f4ff;border:1px solid #c0cfe8;border-radius:8px;padding:12px;color:#1F3864;font-size:13px;margin-bottom:14px}
+.mode-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.mode-add{background:#E2EFDA;color:#375623}
+.mode-edit{background:#D9E1F2;color:#1F3864}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:14px;width:min(780px,95vw);max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.18)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 14px;border-bottom:1px solid #f0f0f0;position:sticky;top:0;background:#fff;z-index:1}
+.modal-title{font-size:15px;font-weight:600;color:#1F3864}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:#aaa;line-height:1;padding:2px 6px;border-radius:4px}
+.modal-close:hover{background:#f0f0f0;color:#333}
+.modal-body{padding:20px}
+.modal-map{max-width:300px;max-height:300px;width:auto;height:auto;object-fit:contain;border-radius:8px;border:1px solid #e5e7eb;margin:0 auto 16px;display:block;background:#f4f6f9}
+.modal-map-ph{width:100%;height:120px;background:#f4f6f9;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:12px;margin-bottom:16px;border:1px solid #e5e7eb}
+.modal-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px 20px}
+.modal-section{font-size:10px;font-weight:700;color:#1F3864;text-transform:uppercase;letter-spacing:.06em;margin:14px 0 8px;border-top:1px solid #f0f0f0;padding-top:12px;grid-column:span 3}
+.mi{display:flex;flex-direction:column;gap:2px}
+.mi label{font-size:10px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:.04em}
+.mi span{font-size:12px;color:#1a1a2e}
+.mi a{font-size:12px;color:#1F3864;text-decoration:none}
+.mi.span2{grid-column:span 2}
+.mi.span3{grid-column:span 3}
+.row-clickable{cursor:pointer}
+.row-clickable:hover td{background:#EEF2FF !important}
+.action-btn:disabled{opacity:.35;cursor:not-allowed !important}
+.pbar-wrap{width:80px;background:#e5e7eb;border-radius:20px;height:7px;overflow:hidden}
+.pbar-fill{height:7px;border-radius:20px;transition:width .3s}
+.pbar-label{font-size:10px;font-weight:600;margin-top:2px}
+.deadline-urgent{background:#FFDCE0;color:#C00000;padding:2px 7px;border-radius:10px;font-weight:600;font-size:11px}
+.deadline-soon{background:#FFF2CC;color:#854F0B;padding:2px 7px;border-radius:10px;font-weight:600;font-size:11px}
+.deadline-warn{background:#FFF2CC;color:#854F0B;padding:2px 7px;border-radius:10px;font-weight:600;font-size:11px}
+.deadline-ok{background:#E2EFDA;color:#375623;padding:2px 7px;border-radius:10px;font-weight:600;font-size:11px}
+.deadline-none{color:#ccc;font-size:11px}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sb-title">
+    <h2>🌍 REMHI Simulations</h2>
+    <p>CMCC — REMHI Division</p>
+  </div>
+  <div class="sb-section">Filters</div>
+  <div class="sb-filter"><label>Project</label>
+    <select id="f-project" onchange="applyFilters()"><option value="">All</option></select></div>
+  <div class="sb-filter"><label>Experiment</label>
+    <select id="f-experiment" onchange="applyFilters()"><option value="">All</option></select></div>
+  <div class="sb-filter"><label>Status</label>
+    <select id="f-status" onchange="applyFilters()"><option value="">All</option></select></div>
+  <div class="sb-filter"><label>Supercomputer</label>
+    <select id="f-supercomputer" onchange="applyFilters()"><option value="">All</option></select></div>
+  <div class="sb-filter"><label>Domain</label>
+    <select id="f-domain" onchange="applyFilters()"><option value="">All</option></select></div>
+  <div class="sb-filter"><label>RCM Model</label>
+    <select id="f-rcm" onchange="applyFilters()"><option value="">All</option></select></div>
+  <div class="sb-filter"><label>IC/LBC</label>
+    <select id="f-lbc" onchange="applyFilters()"><option value="">All</option></select></div>
+  <div class="sb-bottom">
+    <div style="color:rgba(255,255,255,.5);font-size:10px;margin-bottom:4px">GitHub Token</div>
+    <input class="sb-token" type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxx" onchange="saveToken()">
+    <button class="btn-sm" onclick="loadData()">🔄 Reload</button>
+    <div style="color:rgba(255,255,255,.3);font-size:10px;margin-top:8px" id="last-refresh"></div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <h1>🌍 REMHI Monitoring</h1>
+    <span id="sim-count">Loading…</span>
+  </div>
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('summary',this)">📊 Summary</div>
+    <div class="tab" id="tab-btn-database" onclick="showTab('database',this)">📋 Database</div>
+    <div class="tab" id="tab-btn-form" onclick="openAddForm(this)">➕ Add simulation</div>
+  </div>
+  <div id="error-box"></div>
+
+  <!-- SUMMARY -->
+  <div id="tab-summary" class="tab-content active">
+    <div class="kpi-row" id="kpi-row"></div>
+    <div class="charts-row">
+      <div class="chart-card"><h3>Status distribution</h3>
+        <div style="position:relative;height:220px"><canvas id="c-status"></canvas></div></div>
+      <div class="chart-card"><h3>By project</h3>
+        <div style="position:relative;height:220px"><canvas id="c-project"></canvas></div></div>
+    </div>
+    <div class="charts-row3">
+<div class="chart-card"><h3>By experiment</h3>
+        <div style="position:relative;height:190px"><canvas id="c-exp"></canvas></div></div>
+      <div class="chart-card"><h3>By domain</h3>
+        <div style="position:relative;height:190px"><canvas id="c-domain"></canvas></div></div>
+    </div>
+    <div class="charts-row3" style="margin-top:14px">
+      <div class="chart-card"><h3>By RCM model</h3>
+        <div style="position:relative;height:190px"><canvas id="c-rcm"></canvas></div></div>
+      <div class="chart-card"><h3>By IC/LBC</h3>
+        <div style="position:relative;height:190px"><canvas id="c-lbc"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- DATABASE -->
+  <div id="tab-database" class="tab-content">
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th title="IDs are permanent — gaps after deletion are expected">#</th><th>Project</th><th>Experiment</th><th>Domain</th>
+          <th>Resolution</th><th>Period</th><th>RCM</th><th>IC/LBC</th><th>Status</th>
+          <th>Supercomputer</th><th>Cores</th><th>⚡ Total est. [core-hrs]</th><th>💾 Total est. [GB]</th><th>👤 Added by</th><th>📧 Contact</th><th>🏁 Exp. completion</th><th>📌 Task deadline</th><th title="Work path">📁</th><th>Actions</th>
+        </tr></thead>
+        <tbody id="db-body"><tr><td colspan="19" class="loading">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+
+  <!-- FORM (shared Add + Edit) -->
+  <div id="tab-form" class="tab-content">
+    <div class="form-card">
+      <div class="form-header">
+        <h2 id="form-title">Add simulation</h2>
+        <span class="mode-badge mode-add" id="form-badge">NEW</span>
+      </div>
+      <div id="form-msg"></div>
+      <div class="info">
+        Fill in the fields and click <b>Save</b> — the record is written directly to the repository.
+        <br><small>A GitHub token with <code>repo</code> scope is required (enter it in the sidebar).</small>
+      </div>
+
+      <div class="form-grid">
+        <div class="field"><label>Project</label><select id="a-project"></select></div>
+        <div class="field"><label>Experiment</label>
+          <select id="a-experiment" onchange="updateLbcList()"></select></div>
+        <div class="field"><label>Domain</label><select id="a-domain" onchange="autoFillDomainUrl()"></select></div>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>Spin-up year</label>
+          <input type="number" id="a-spinup" value=""></div>
+        <div class="field"><label>Start year</label>
+          <input type="number" id="a-start" value="" oninput="updateCphmPreview()"></div>
+        <div class="field"><label>End year</label>
+          <input type="number" id="a-end" value="" oninput="updateCphmPreview()"></div>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>RCM Model</label><select id="a-rcm"></select></div>
+        <div class="field">
+          <label>Nesting type</label>
+          <select id="a-nesttype" onchange="updateNestingUI()">
+            <option value="">—</option>
+            <option value="direct">Direct (from GCM / Reanalysis)</option>
+            <option value="intermediate">Intermediate (from another simulation)</option>
+          </select>
+          <div style="font-size:10px;color:#888;margin-top:3px" id="a-nesttype-hint">How this simulation is driven</div>
+        </div>
+        <div class="field" id="field-lbc">
+          <label id="a-lbc-label">IC/LBC</label>
+          <select id="a-lbc"></select>
+          <div id="a-lbc-hint" style="font-size:10px;color:#888;margin-top:3px"></div>
+        </div>
+        <div class="field" id="field-parent" style="display:none">
+          <label>Parent simulation</label>
+          <select id="a-parent"></select>
+          <div style="font-size:10px;color:#888;margin-top:3px">Output of this simulation is used as IC/LBC</div>
+        </div>
+        <div class="field"><label>Status</label><select id="a-status"></select></div>
+      </div>
+
+      <div class="form-section">Compute</div>
+      <div class="form-grid">
+        <div class="field"><label>Supercomputer</label><select id="a-sc"></select></div>
+        <div class="field"><label>Cores</label>
+          <input type="number" id="a-cores" value="" oninput="updateCphmPreview()"></div>
+        <div class="field"><label>Run time 1month [h]</label>
+          <input type="number" id="a-rt" value="" step="0.01" oninput="updateCphmPreview()"></div>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>Spatial resolution</label>
+          <input type="text" id="a-res" placeholder="e.g. 0.0275 deg - 3 km" value=""></div>
+        <div class="field"><label>Size 1month [GB]</label>
+          <input type="number" id="a-size" value="" oninput="updateCphmPreview()"></div>
+        <div class="field"><label>Work path</label>
+          <input type="text" id="a-path" placeholder="/work/…"></div>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label>📅 Actual start date</label>
+          <input type="date" id="a-actualstart" oninput="updateCphmPreview()">
+          <div style="font-size:10px;color:#888;margin-top:3px">When the simulation actually started</div>
+        </div>
+        <div class="field" style="display:flex;flex-direction:column;justify-content:flex-end">
+          <label style="font-size:11px;font-weight:600;color:#1F6B75;text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px">⚡ Core-hrs / month (auto)</label>
+          <div id="a-cphm-display" style="background:#E2EFDA;border:1px solid #9DC88D;border-radius:6px;padding:8px 12px;font-size:14px;font-weight:700;color:#375623;min-height:38px">—</div>
+          <div style="font-size:10px;color:#888;margin-top:3px">= Cores × Run time 1month</div>
+        </div>
+      </div>
+      <div class="form-grid" style="margin-bottom:14px">
+        <div class="field" style="grid-column:span 3">
+          <label style="font-size:11px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px">📈 Simulation estimates</label>
+          <div id="cphm-preview" style="background:#f4f6f9;border-radius:6px;padding:10px 14px;font-size:11px;color:#aaa;line-height:1.7">
+            Enter Start year, End year, Cores and Run time 1month to see estimates
+          </div>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:4px"><label>Notes</label>
+        <textarea id="a-notes" rows="2" style="width:100%"></textarea></div>
+
+      <div class="form-section" style="color:#1F3864;border-color:#c0cfe8">Responsibility & scheduling</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>👤 Added by</label>
+          <input type="text" id="a-addedby" readonly
+            style="background:#f0f4ff;color:#1F3864;font-weight:600;border-color:#c0cfe8;cursor:default"
+            placeholder="Auto-filled from GitHub token">
+        </div>
+        <div class="field">
+          <label>📧 Contact email <span style="color:#C00000">*</span></label>
+          <input type="email" id="a-email" placeholder="name@cmcc.it">
+        </div>
+        <div class="field">
+          <label>🏁 Expected completion</label>
+          <input type="date" id="a-deadline">
+          <div style="font-size:10px;color:#888;margin-top:3px">Expected end date of the simulation run</div>
+        </div>
+        <div class="field">
+          <label>📌 Task deadline</label>
+          <input type="date" id="a-taskdeadline">
+          <div style="font-size:10px;color:#C00000;margin-top:3px">Deadline of the project task that includes this simulation</div>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="field" style="grid-column:span 3">
+          <label>🗺️ Domain map / reference</label>
+          <div id="mapurl-auto" style="font-size:11px;color:#1F6B75;margin-bottom:4px;display:none">
+            ✅ Official CORDEX domain image auto-linked — or paste custom URL below
+          </div>
+          <input type="text" id="a-mapurl" placeholder="https://… (leave empty for auto CORDEX link, or enter custom image URL)">
+          <div style="font-size:10px;color:#888;margin-top:3px">
+            Standard CORDEX domains: official page linked automatically.<br>
+            Custom domain: paste a direct image URL.
+          </div>
+          <div id="map-preview" style="margin-top:8px"></div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-primary" id="save-btn" onclick="saveSimulation()">💾 Save</button>
+        <button class="btn-cancel" onclick="cancelForm()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- SIMULATION DETAIL MODAL -->
+<div class="modal-overlay" id="sim-modal" onclick="closeModal(event)">
+  <div class="modal" id="modal-box">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">Simulation details</div>
+      <button class="modal-close" onclick="document.getElementById('sim-modal').classList.remove('open');document.body.style.overflow=''">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+const OWNER='marioRaffa', REPO='remhi-simulations', BRANCH='main';
+// ── Progress & core-hours calculator ──────────────────────────────────────
+function calcProgress(s){
+  const p=s.period||{};
+  const totalYears=((p.end||0)-(p.start||0)+1)||null;
+  const totalMonths=totalYears?totalYears*12:null;
+  const cphm=calcCorehoursPerMonth(s);
+  const sizepm=s.compute?.size_1month_gb||null;
+  const totalCorehours=cphm&&totalMonths?Math.round(cphm*totalMonths):null;
+  const totalStorage=sizepm&&totalMonths?Math.round(sizepm*totalMonths):null;
+  return {totalMonths,totalYears,totalCorehours,totalStorage};
+}
+
+function totalYears(s){
+  const p=s.period||{};
+  return (p.end&&p.start)?(p.end-p.start+1):null;
+}
+
+// Auto-calculate core-hrs/month from cores × run_time_1month_h
+function calcCorehoursPerMonth(s){
+  const c=s.compute||{};
+  if(c.cores&&c.run_time_1month_h) return Math.round(c.cores*c.run_time_1month_h);
+  return s.corehours_per_month||null; // fallback for old data
+}
+
+
+// CORDEX official domain URLs
+// Direct image URLs from cordex.org (wp-content uploads)
+const CORDEX_DOMAIN_URLS={
+  'EUR-CORDEX':  'https://cordex.org/wp-content/uploads/2012/11/images_globes_Fig4_cordex_domains_eur-300x300.png',
+  'AFR-CORDEX':  'https://cordex.org/wp-content/uploads/2017/11/Fig5_cordex_domains_afr-300x300.png',
+  'NAM-CORDEX':  'https://cordex.org/wp-content/uploads/2012/11/images_globes_Fig3_cordex_domains_nam-300x300.png',
+  'SAM-CORDEX':  'https://cordex.org/wp-content/uploads/2012/11/images_globes_Fig1_cordex_domains_sam-300x300.png',
+  'CAM-CORDEX':  'https://cordex.org/wp-content/uploads/2012/11/images_globes_Fig2_cordex_domains_cam-300x300.png',
+  'MED-CORDEX':  'https://cordex.org/wp-content/uploads/2012/11/images_globes_Fig12_cordex_domains_med-300x300.png',
+  'MNA-CORDEX':  'https://cordex.org/wp-content/uploads/2012/11/images_globes_Fig13_cordex_domains_mna-300x300.png',
+  'WAS-CORDEX':  'https://cordex.org/wp-content/uploads/2012/11/images_globes_Fig6_cordex_domains_was-300x300.png',
+  'EAS-CORDEX':  'https://cordex.org/wp-content/uploads/2012/11/images_globes_Fig7_cordex_domains_eas-300x300.png',
+  'SEA-CORDEX':  'https://cordex.org/wp-content/uploads/2012/11/images_globes_Fig14_cordex_domains_sea-300x300.png',
+  'CAS-CORDEX':  'https://cordex.org/wp-content/uploads/2012/11/images_globes_Fig8_cordex_domains_cas-300x300.png',
+  'AUS-CORDEX':  'https://cordex.org/wp-content/uploads/2012/11/images_globes_Fig9_cordex_domains_aus-300x300.png',
+  'ARC-CORDEX':  'https://cordex.org/wp-content/uploads/2012/11/images_globes_Fig11_cordex_domains_arc-300x300.png',
+  'ANT-CORDEX':  'https://cordex.org/wp-content/uploads/2012/11/images_globes_Fig10_cordex_domains_ant-300x300.png',
+};
+
+const STATUS_COLORS={'Completed':'#70AD47','Ongoing':'#4472C4','Planned':'#BF8F00','NOT Planned':'#C00000','Paused':'#808080','Failed':'#C55A11'};
+const STATUS_BG={'Completed':'#E2EFDA','Ongoing':'#D9E1F2','Planned':'#FFF2CC','NOT Planned':'#FFDCE0','Paused':'#F2F2F2','Failed':'#FCE4D6'};
+let allSims=[], lists={}, charts={};
+let editingFile=null, editingSha=null;
+let ghUserName=""; // cached GitHub full name or login
+let ghUserLogin=""; // cached GitHub login
+
+function getToken(){return localStorage.getItem('gh_token')||document.getElementById('gh-token').value||'';}
+function saveToken(){const t=document.getElementById('gh-token').value.trim();if(t)localStorage.setItem('gh_token',t);}
+
+async function ghGet(path){
+  const h={'Accept':'application/vnd.github.v3+json'};
+  const t=getToken(); if(t) h['Authorization']=`Bearer ${t}`;
+  const r=await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/${path}`,{headers:h});
+  if(!r.ok) throw new Error(`${r.status}: ${(await r.json()).message||''}`);
+  return r.json();
+}
+async function ghPut(path,body){
+  const t=getToken(); if(!t) throw new Error('GitHub token required');
+  const r=await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/${path}`,{
+    method:'PUT',headers:{'Authorization':`Bearer ${t}`,'Content-Type':'application/json'},
+    body:JSON.stringify(body)});
+  if(!r.ok) throw new Error(`${r.status}: ${(await r.json()).message||''}`);
+  return r.json();
+}
+async function ghDelete(path,sha,msg){
+  const t=getToken(); if(!t) throw new Error('GitHub token required');
+  const r=await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/${path}`,{
+    method:'DELETE',headers:{'Authorization':`Bearer ${t}`,'Content-Type':'application/json'},
+    body:JSON.stringify({message:msg,sha,branch:BRANCH})});
+  if(!r.ok) throw new Error(`${r.status}: ${(await r.json()).message||''}`);
+  return r.json();
+}
+
+async function loadData(){
+  showError('');
+  document.getElementById('sim-count').textContent='Loading…';
+  document.getElementById('db-body').innerHTML='<tr><td colspan="19" class="loading">Loading simulations…</td></tr>';
+  const saved=localStorage.getItem('gh_token');
+  if(saved) document.getElementById('gh-token').value=saved;
+  try{
+    const ld=await ghGet(`contents/lists.yaml?ref=${BRANCH}`);
+    lists=jsyaml.load(new TextDecoder().decode(Uint8Array.from(atob(ld.content.replace(/\n/g,'')),c=>c.charCodeAt(0))));
+    // Use Trees API — single request for all files (avoids rate limits)
+    const tree=await ghGet(`git/trees/HEAD?recursive=1&_=${Date.now()}`);
+    const simBlobs=tree.tree.filter(f=>f.path.startsWith('simulations/')&&f.path.endsWith('.yaml')&&!f.path.endsWith('.gitkeep'));
+    allSims=await Promise.all(simBlobs.map(async f=>{
+      const d=await ghGet(`git/blobs/${f.sha}`);
+      const text=new TextDecoder().decode(Uint8Array.from(atob(d.content.replace(/\n/g,'')),c=>c.charCodeAt(0)));
+      const s=jsyaml.load(text);
+      s._file=f.path.replace('simulations/','');
+      s._sha=f.sha;
+      // Need blob SHA for PUT/DELETE — fetch the file sha separately only when editing
+      s._treeSha=f.sha;
+      return s;
+    }));
+    allSims.sort((a,b)=>String(a.id||'').localeCompare(String(b.id||'')));
+    populateFilters(); populateFormDropdowns(); applyFilters();
+    document.getElementById('last-refresh').textContent='Updated: '+new Date().toLocaleTimeString();
+
+    // Try to prefill Added by from GitHub API
+    try{
+      const token=getToken();
+      if(token){
+        const user=await fetch('https://api.github.com/user',{
+          headers:{'Authorization':`Bearer ${token}`,'Accept':'application/vnd.github.v3+json'}
+        });
+        if(user.ok){
+          const u=await user.json();
+          ghUserName=u.name||u.login||'';
+          ghUserLogin=u.login||'';
+          const addedByEl=document.getElementById('a-addedby');
+          if(addedByEl&&!addedByEl.value) addedByEl.value=ghUserName;
+          // Re-render table now that we know the user — fixes Edit button permissions
+          applyFilters();
+          const sb=document.getElementById('last-refresh');
+          if(sb) sb.textContent='Updated: '+new Date().toLocaleTimeString()+' · 👤 '+(ghUserLogin||ghUserName);
+        }
+      }
+    }catch(_){}
+  }catch(e){
+    showError(`Error loading data: ${e.message}`);
+    document.getElementById('sim-count').textContent='Error';
+  }
+}
+
+function populateFilters(){
+  const keys={'f-project':'project','f-experiment':'experiment','f-status':'status','f-domain':'domain','f-rcm':'rcm_model'};
+  for(const [id,k] of Object.entries(keys)){
+    const sel=document.getElementById(id),cur=sel.value;
+    sel.innerHTML='<option value="">All</option>';
+    (lists[k]||[]).forEach(v=>{const o=document.createElement('option');o.value=o.textContent=v;if(v===cur)o.selected=true;sel.appendChild(o);});
+  }
+  const scSel=document.getElementById('f-supercomputer'),curSc=scSel.value;
+  scSel.innerHTML='<option value="">All</option>';
+  (lists['supercomputer']||[]).forEach(v=>{const o=document.createElement('option');o.value=o.textContent=v;if(v===curSc)o.selected=true;scSel.appendChild(o);});
+  const lSel=document.getElementById('f-lbc'),curL=lSel.value;
+  lSel.innerHTML='<option value="">All</option>';
+  [...(lists['ic_lbc_reanalysis']||[]),...(lists['ic_lbc_gcm']||[])].forEach(v=>{
+    const o=document.createElement('option');o.value=o.textContent=v;if(v===curL)o.selected=true;lSel.appendChild(o);});
+}
+
+
+function deadlinePriority(s){
+  if(!s.delivery_deadline) return {cls:'deadline-none',label:'—',days:null};
+  const today=new Date(); today.setHours(0,0,0,0);
+  const dl=new Date(s.delivery_deadline);
+  const days=Math.round((dl-today)/(1000*60*60*24));
+  if(days<0)    return {cls:'deadline-urgent',label:s.delivery_deadline+' ⚠️',days};
+  if(days<=30)  return {cls:'deadline-urgent',label:s.delivery_deadline,days};
+  if(days<=90)  return {cls:'deadline-soon',  label:s.delivery_deadline,days};
+  if(days<=180) return {cls:'deadline-warn',  label:s.delivery_deadline,days};
+  return             {cls:'deadline-ok',    label:s.delivery_deadline,days};
+}
+
+
+
+function applyFilters(){
+  const v=id=>document.getElementById(id).value;
+  const filtered=allSims.filter(s=>{
+    const c=s.compute||{};
+    return (!v('f-project')||s.project===v('f-project'))
+        &&(!v('f-experiment')||s.experiment===v('f-experiment'))
+        &&(!v('f-status')||s.status===v('f-status'))
+        &&(!v('f-supercomputer')||c.supercomputer===v('f-supercomputer'))
+        &&(!v('f-domain')||s.domain===v('f-domain'))
+        &&(!v('f-rcm')||s.rcm_model===v('f-rcm'))
+        &&(!v('f-lbc')||s.ic_lbc===v('f-lbc'));
+  });
+  document.getElementById('sim-count').textContent=`${filtered.length} simulation(s) of ${allSims.length} total`;
+  renderKPIs(filtered); renderCharts(filtered); renderTable(filtered);
+}
+
+function renderKPIs(sims){
+  const cnt=s=>sims.filter(x=>x.status===s).length;
+  // Aggregate compute resources
+  const totalCH=sims.reduce((sum,s)=>{const r=calcProgress(s);return sum+(r.totalCorehours||0);},0);
+  const totalST=sims.reduce((sum,s)=>{const r=calcProgress(s);return sum+(r.totalStorage||0);},0);
+  const fmtCH=totalCH>1e6?(totalCH/1e6).toFixed(1)+' M':totalCH>1e3?(Math.round(totalCH/1e3))+' K':totalCH.toLocaleString();
+  const fmtST=totalST>1e6?(totalST/1e6).toFixed(1)+' PB':totalST>1e3?(totalST/1e3).toFixed(0)+' TB':totalST+' GB';
+  // Status cards: read from lists.yaml — no hardcoding
+  const statusCards=(lists['status']||[]).map(s=>{
+    const fg=STATUS_COLORS[s]||'#555';
+    const bg=STATUS_BG[s]||'#f0f0f0';
+    return `<div class="kpi" style="border-color:${fg};background:${bg}">
+      <div class="kpi-label" style="color:${fg}">${s}</div>
+      <div class="kpi-val" style="color:${fg};font-size:22px">${cnt(s)}</div></div>`;
+  }).join('');
+  const totalCard=`<div class="kpi" style="border-color:#1F3864;background:#D9E1F2">
+    <div class="kpi-label" style="color:#1F3864">Total sims</div>
+    <div class="kpi-val" style="color:#1F3864;font-size:22px">${sims.length}</div></div>`;
+  const resourceCards=`
+    <div class="kpi" style="border-color:#1F6B75;background:#E1F5EE">
+      <div class="kpi-label" style="color:#1F6B75">⚡ Total [core-hrs]</div>
+      <div class="kpi-val" style="color:#1F6B75;font-size:20px">${totalCH>0?fmtCH:'—'}</div></div>
+    <div class="kpi" style="border-color:#375623;background:#E2EFDA">
+      <div class="kpi-label" style="color:#375623">💾 Total storage</div>
+      <div class="kpi-val" style="color:#375623;font-size:20px">${totalST>0?fmtST:'—'}</div></div>`;
+  document.getElementById('kpi-row').innerHTML=totalCard+statusCards+resourceCards;
+}
+
+function grp(sims,key){
+  const m={};
+  sims.forEach(s=>{const v=key==='supercomputer'?(s.compute||{}).supercomputer||'?':s[key]||'?';m[v]=(m[v]||0)+1;});
+  return m;
+}
+function mkChart(id,type,labels,data,colors){
+  if(charts[id])charts[id].destroy();
+  const ctx=document.getElementById(id); if(!ctx)return;
+  charts[id]=new Chart(ctx,{type,data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:type==='doughnut',position:'bottom',labels:{font:{size:11},boxWidth:12}}},
+      scales:type!=='doughnut'?{
+        x:{ticks:{font:{size:10}}},
+        y:{ticks:{font:{size:10},stepSize:1,callback:v=>Number.isInteger(v)?v:''},beginAtZero:true,min:0}
+      }:{},
+      cutout:type==='doughnut'?'55%':undefined}});
+}
+function renderCharts(sims){
+  const PALETTE=['#4472C4','#70AD47','#ED7D31','#9E3FBF','#C00000','#BF8F00','#1F6B75','#C55A11','#808080'];
+  const sg=grp(sims,'status');
+  mkChart('c-status','doughnut',Object.keys(sg),Object.values(sg),Object.keys(sg).map(k=>STATUS_COLORS[k]||'#aaa'));
+  const pg=grp(sims,'project');
+  mkChart('c-project','bar',Object.keys(pg),Object.values(pg),PALETTE);
+  const eg=grp(sims,'experiment');
+  mkChart('c-exp','bar',Object.keys(eg),Object.values(eg),PALETTE);
+  const dg=grp(sims,'domain');
+  mkChart('c-domain','bar',Object.keys(dg),Object.values(dg),PALETTE);
+  const rg=grp(sims,'rcm_model');
+  mkChart('c-rcm','bar',Object.keys(rg),Object.values(rg),['#4472C4','#70AD47']);
+  const lg=grp(sims,'ic_lbc');
+  mkChart('c-lbc','bar',Object.keys(lg),Object.values(lg),PALETTE);
+}
+
+function renderTable(sims){
+  if(!sims.length){
+    document.getElementById('db-body').innerHTML=
+      '<tr><td colspan="19" style="text-align:center;padding:30px;color:#aaa">No simulations match the filters</td></tr>';
+    return;
+  }
+  const tbody=document.getElementById('db-body');
+  tbody.innerHTML='';
+  sims.forEach((s,i)=>{
+    const c=s.compute||{},p=s.period||{};
+    const bg=STATUS_BG[s.status]||'#fff',fg=STATUS_COLORS[s.status]||'#000';
+    const tr=document.createElement('tr');
+    tr.className='row-clickable';
+    tr.style.background=i%2===0?'#fff':'#fafbff';
+    tr.innerHTML=`
+      <td><b style="color:#1F3864">${s.id||''}</b></td>
+      <td>${s.project||''}</td>
+      <td>${s.experiment||''}</td>
+      <td style="color:#666">${s.domain||''}</td>
+      <td style="color:#888;font-size:11px">${s.spatial_resolution||'—'}</td>
+      <td style="color:#666;white-space:nowrap">${p.start||''}/${p.end||''}</td>
+      <td>${s.rcm_model||''}</td>
+      <td>${(()=>{
+        if(s.nesting_type==='intermediate'||s.parent_sim_id){
+          const pid=s.parent_sim_id;
+          return pid?`<span style="background:#EDE9FE;color:#4C1D95;padding:1px 6px;border-radius:8px;font-size:10px;font-weight:600">🔗 #${pid}</span>`:
+                     `<span style="background:#EDE9FE;color:#4C1D95;padding:1px 6px;border-radius:8px;font-size:10px">nested</span>`;
+        }
+        return s.ic_lbc||'';
+      })()}</td>
+      <td><span class="badge" style="background:${bg};color:${fg}">${s.status||''}</span></td>
+      <td>${c.supercomputer||''}</td>
+      <td style="text-align:right">${c.cores||''}</td>
+      <td id="chtot-${s.id||i}" style="font-size:11px;text-align:right;color:#1F3864"></td>
+      <td id="sttot-${s.id||i}" style="font-size:11px;text-align:right;color:#1F3864"></td>
+      <td style="font-size:11px">${s.added_by||'<span style="color:#ccc">—</span>'}</td>
+      <td style="font-size:11px">${s.contact_email
+        ?`<a href="mailto:${s.contact_email}" style="color:#1F3864;text-decoration:none"
+             onclick="event.stopPropagation()">📧 ${s.contact_email}</a>`
+        :'<span style="color:#ccc">—</span>'}</td>
+      <td style="white-space:nowrap">${(()=>{const d=deadlinePriority(s);return d.days===null?'<span class="deadline-none">—</span>':`<span class="${d.cls}">${d.label}</span>`;})()}</td>
+      
+      <td style="white-space:nowrap">${(()=>{
+        if(!s.task_deadline) return '<span style="color:#ccc;font-size:11px">—</span>';
+        const d=deadlinePriority({delivery_deadline:s.task_deadline});
+        return `<span class="${d.cls}">${d.label}</span>`;
+      })()}</td>
+      <td style="text-align:center" onclick="event.stopPropagation()">${s.work_path
+        ?`<button onclick="navigator.clipboard.writeText('${s.work_path}').then(()=>{this.title='Copied!';setTimeout(()=>this.title='${s.work_path}',1500)})"
+            style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px" title="${s.work_path}">📁</button>`
+        :'<span style="color:#ddd;font-size:12px">—</span>'}</td>
+      <td style="white-space:nowrap">
+        <button class="action-btn btn-info" onclick="openModal(allSims.find(x=>x._file==='${s._file}'))">👁</button>
+        <button class="action-btn btn-edit" onclick="openEdit('${s._file}','${s._sha}')">✏️ Edit</button>
+        <button class="action-btn btn-del"  onclick="deleteSim('${s._file}','${s._sha}','${s.id||''}')">🗑️</button>
+      </td>`;
+    // Soft permission check
+    const _ab=(s.added_by||'').toLowerCase().replace(/\s/g,'');
+    const _cb=(s.metadata?.created_by||'').toLowerCase().replace(/\s/g,'');
+    const _un=ghUserName.toLowerCase().replace(/\s/g,'');
+    const _ul=ghUserLogin.toLowerCase().replace(/\s/g,'');
+    const canEdit=!ghUserName||!s.added_by||_ab===_un||_ab===_ul||_cb===_un||_cb===_ul;
+    if(!canEdit){
+      tr.querySelectorAll('.btn-edit,.btn-del').forEach(b=>{
+        b.disabled=true;
+        b.title='Only '+s.added_by+' can modify this';
+        b.style.cssText='opacity:.35;cursor:not-allowed;background:#f0f0f0;color:#aaa;border-color:#ddd';
+        b.setAttribute('onclick','');
+      });
+    }
+    tbody.appendChild(tr);
+    // Fill totals
+    const rp=calcProgress(s);
+    const na='<span style="color:#ccc">—</span>';
+    const ct=document.getElementById(`chtot-${s.id||i}`);if(ct)ct.innerHTML=rp.totalCorehours!=null?'<b>'+rp.totalCorehours.toLocaleString()+'</b>':na;
+    const st=document.getElementById(`sttot-${s.id||i}`);if(st)st.innerHTML=rp.totalStorage!==null?'<b>'+rp.totalStorage.toLocaleString()+'</b>':na;
+  });
+}
+
+function openModal(s){
+  const c=s.compute||{}, p=s.period||{};
+  const bg=STATUS_BG[s.status]||'#fff', fg=STATUS_COLORS[s.status]||'#000';
+  document.getElementById('modal-title').textContent=
+    `#${s.id||''} — ${s.experiment||''} | ${s.project||''}`;
+
+  const mapHtml=s.domain_map_url
+    ?`<img class="modal-map" src="${s.domain_map_url}" alt="Domain map"
+         onerror="this.outerHTML='<div class=modal-map-ph>Image not available</div>'">`
+    :`<div class="modal-map-ph">No domain map provided</div>`;
+
+  const fi=(label,val,cls='')=>
+    `<div class="mi ${cls}"><label>${label}</label><span>${val||'—'}</span></div>`;
+  const fa=(label,href,txt,cls='')=>
+    `<div class="mi ${cls}"><label>${label}</label><a href="${href}">${txt}</a></div>`;
+  const sec=(t)=>
+    `<div class="modal-section">${t}</div>`;
+
+  document.getElementById('modal-body').innerHTML=`
+    ${mapHtml}
+    <div class="modal-grid">
+      ${sec('Scientific configuration')}
+      ${fi('Experiment', s.experiment)}
+      ${fi('Domain', s.domain)}
+      ${fi('Spatial resolution', s.spatial_resolution)}
+      ${fi('Period', `${p.spin_up?'('+p.spin_up+') ':''}${p.start||''}–${p.end||''}`)}
+      ${fi('RCM Model', s.rcm_model)}
+      ${(()=>{
+        if(s.nesting_type==='intermediate'||s.parent_sim_id){
+          const psim=allSims.find(x=>x.id===s.parent_sim_id);
+          const pinfo=psim?`#${psim.id} — ${psim.experiment} ${psim.domain} (${psim.ic_lbc||''})`:s.ic_lbc||'—';
+          return `<div class="mi span3"><label>🔗 Intermediate nesting — Parent simulation</label>
+            <span style="background:#EDE9FE;color:#4C1D95;padding:2px 10px;border-radius:8px;font-size:12px;font-weight:600;display:inline-block;margin-top:2px">${pinfo}</span>
+          </div>`;
+        }
+        return fi('IC/LBC (direct)',s.ic_lbc);
+      })()}
+      ${sec('Simulation estimates')}
+      ${(()=>{
+        const r=calcProgress(s);
+        return `<div class="mi span3" style="background:#f0f4ff;border-radius:8px;padding:12px 14px;line-height:1.8">
+          <label>Full period — ${totalYears(s)} yr / ${r.totalMonths} months</label>
+          <span>${[
+            r.totalCorehours!=null?'⚡ '+r.totalCorehours.toLocaleString()+' core-hrs total':null,
+            r.totalStorage!=null?'💾 '+r.totalStorage.toLocaleString()+' GB total':null
+          ].filter(Boolean).join(' &nbsp;·&nbsp; ')||'—'}</span>
+        </div>`;
+      })()}
+      ${(()=>{const cphm=calcCorehoursPerMonth(s);return fi('Core-hrs/month (auto)',cphm?cphm.toLocaleString()+' h':'—')})()}
+      ${fi('Actual start date (estimate)', s.actual_start_date)}
+      ${fi('Expected completion (estimate)', s.delivery_deadline)}
+      ${s.task_deadline?fi('📌 Task deadline', `<span class="${deadlinePriority({delivery_deadline:s.task_deadline}).cls}">${s.task_deadline}</span>`):''}
+      ${fi('Project deadline', s.task_deadline?`<span class="${(()=>{const d=new Date(s.task_deadline),t=new Date();const days=Math.round((d-t)/86400000);return days<0||days<=30?'deadline-urgent':days<=90?'deadline-soon':days<=180?'deadline-warn':'deadline-ok';})()"}">${s.task_deadline+(new Date(s.task_deadline)<new Date()?' ⚠️':'')}</span>`:null)}
+      ${sec('Compute')}
+      ${fi('Supercomputer', c.supercomputer)}
+      ${fi('Cores', c.cores)}
+      ${fi('Run time 1month [h]', c.run_time_1month_h||c.run_time_1yr_h)}
+      ${fi('Size 1month [GB]', c.size_1month_gb)}
+      ${fi('Output frequency', c.output_frequency)}
+      ${fi('Work path', s.work_path, 'span3')}
+      ${sec('Status & responsibility')}
+      <div class="mi"><label>Status</label>
+        <span class="badge" style="background:${bg};color:${fg};margin-top:2px">${s.status||'—'}</span>
+      </div>
+      ${(()=>{
+        const isOwner=!s.added_by||!ghUserName||
+          s.added_by.toLowerCase()===ghUserName.toLowerCase()||
+          s.metadata?.created_by?.toLowerCase()===ghUserName.toLowerCase();
+        const ownerBadge=isOwner&&ghUserName
+          ?'<span style="background:#E2EFDA;color:#375623;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700;margin-left:6px">✓ You</span>'
+          :'<span style="background:#f0f0f0;color:#888;padding:1px 7px;border-radius:10px;font-size:10px;margin-left:6px">🔒 Read-only for you</span>';
+        return `<div class="mi"><label>Added by</label><span>${s.added_by||'—'}${ownerBadge}</span></div>`;
+      })()}
+      ${s.contact_email
+        ? fa('Contact email',`mailto:${s.contact_email}`,s.contact_email)
+        : fi('Contact email','')}
+      ${fi('Expected completion', s.delivery_deadline
+        ? `<span style="background:#FFF2CC;color:#BF8F00;padding:1px 8px;border-radius:8px;font-weight:600">${s.delivery_deadline}</span>`
+        : '—')}
+      ${fi('Created by', s.metadata?.created_by)}
+      ${fi('Last updated', s.metadata?.updated_at)}
+      ${s.notes?`${sec('Notes')}<div class="mi span3"><span>${s.notes}</span></div>`:''}
+    </div>`;
+
+  document.getElementById('sim-modal').classList.add('open');
+  // Prevent body scroll
+  document.body.style.overflow='hidden';
+}
+
+function closeModal(e){
+  // Close only when clicking the overlay, not the modal itself
+  if(e.target.id==='sim-modal'){
+    document.getElementById('sim-modal').classList.remove('open');
+    document.body.style.overflow='';
+  }
+}
+
+function populateFormDropdowns(){
+  const map={'a-project':'project','a-experiment':'experiment','a-domain':'domain','a-rcm':'rcm_model','a-status':'status','a-sc':'supercomputer'};
+  for(const [id,k] of Object.entries(map)){
+    const sel=document.getElementById(id); sel.innerHTML='';
+    // Empty placeholder first
+    const placeholder=document.createElement('option');
+    placeholder.value=''; placeholder.textContent='—';
+    sel.appendChild(placeholder);
+    (lists[k]||[]).forEach(v=>{const o=document.createElement('option');o.value=o.textContent=v;sel.appendChild(o);});
+  }
+  updateLbcList();
+}
+
+function updateLbcList(keepVal){
+  if(!lists['ic_lbc_reanalysis'])return;
+  const exp=document.getElementById('a-experiment').value;
+  const isEval=exp==='Evaluation';
+  const isEmpty=!exp||exp==='';
+  const opts=isEmpty?[]:(isEval?(lists['ic_lbc_reanalysis']||[]):(lists['ic_lbc_gcm']||[]));
+  const lbl=document.getElementById('a-lbc-label');
+  const sel=document.getElementById('a-lbc');
+  const hint=document.getElementById('a-lbc-hint');
+  lbl.textContent=isEmpty?'IC/LBC':(isEval?'IC/LBC — Reanalysis':'IC/LBC — CMIP6 GCM');
+  lbl.style.color=isEmpty?'#555':(isEval?'#1F6B75':'#4472C4');
+  sel.style.border=isEmpty?'1px solid #e5e7eb':`2px solid ${isEval?'#1F6B75':'#4472C4'}`;
+  hint.textContent=isEmpty?'Select an experiment first':(isEval?'Reanalysis only (Evaluation run)':'CMIP6 GCM forcing (Historical / SSP)');
+  const cur=keepVal||sel.value; sel.innerHTML='';
+  const ph=document.createElement('option');ph.value='';ph.textContent='—';sel.appendChild(ph);
+  opts.forEach(v=>{const o=document.createElement('option');o.value=o.textContent=v;if(v===cur)o.selected=true;sel.appendChild(o);});
+}
+
+function autoFillDomainUrl(){
+  const domain=document.getElementById('a-domain')?.value;
+  const mapUrl=document.getElementById('a-mapurl');
+  const autoNote=document.getElementById('mapurl-auto');
+  if(!mapUrl||!autoNote) return;
+  const cordexUrl=CORDEX_DOMAIN_URLS[domain]||null;
+  if(cordexUrl&&!mapUrl.value){
+    // Only auto-fill if user hasn't typed a custom URL
+    mapUrl.placeholder='Auto: '+cordexUrl;
+    autoNote.style.display='block';
+  } else if(!cordexUrl){
+    mapUrl.placeholder='https://… (direct image URL for custom domain)';
+    autoNote.style.display='none';
+  }
+}
+
+function updateNestingUI(){
+  const nesttype=document.getElementById('a-nesttype')?.value;
+  const fieldLbc=document.getElementById('field-lbc');
+  const fieldParent=document.getElementById('field-parent');
+  if(!fieldLbc||!fieldParent)return;
+  if(nesttype==='intermediate'){
+    fieldLbc.style.display='none';
+    fieldParent.style.display='block';
+    // Populate parent simulation dropdown
+    const sel=document.getElementById('a-parent');
+    const cur=sel.value; sel.innerHTML='';
+    const ph=document.createElement('option');ph.value='';ph.textContent='—';sel.appendChild(ph);
+    allSims.forEach(s=>{
+      if(s._file===editingFile)return; // don't allow self-reference
+      const o=document.createElement('option');
+      o.value=s.id;
+      o.textContent=`#${s.id} — ${s.experiment} ${s.domain} (${s.ic_lbc||''})`;
+      if(s.id===cur)o.selected=true;
+      sel.appendChild(o);
+    });
+  } else {
+    fieldLbc.style.display='block';
+    fieldParent.style.display='none';
+  }
+}
+
+function setVal(id,v){const el=document.getElementById(id);if(el)el.value=v===null||v===undefined?'':v;}
+
+function openAddForm(el){
+  editingFile=null; editingSha=null;
+  populateFormDropdowns();
+  ['a-path','a-notes'].forEach(id=>setVal(id,''));
+  setVal('a-spinup','');setVal('a-start','');setVal('a-end','');
+  setVal('a-cores','');setVal('a-rt','');setVal('a-size','');
+  setVal('a-res','');
+  setVal('a-addedby',ghUserName||''); // always auto from GitHub
+  setVal('a-email','');
+  setVal('a-actualstart','');
+  setVal('a-nesttype','');
+  document.getElementById('field-lbc').style.display='block';
+  document.getElementById('field-parent').style.display='none';
+  setVal('a-deadline','');
+  setVal('a-taskdeadline','');
+  setVal('a-taskdeadline','');
+  setVal('a-mapurl','');
+  const _an=document.getElementById('mapurl-auto');if(_an)_an.style.display='none';
+  document.getElementById('map-preview').innerHTML='';
+  document.getElementById('form-title').textContent='Add simulation';
+  document.getElementById('form-badge').textContent='NEW';
+  document.getElementById('form-badge').className='mode-badge mode-add';
+  document.getElementById('save-btn').textContent='💾 Save';
+  document.getElementById('form-msg').innerHTML='';
+  document.getElementById('tab-btn-form').textContent='➕ Add simulation';
+  updateCphmPreview();
+  showTab('form',el||document.getElementById('tab-btn-form'));
+}
+
+function updateCphmPreview(){
+  const cores   = parseInt(document.getElementById('a-cores')?.value)||0;
+  const rt      = parseFloat(document.getElementById('a-rt')?.value)||0;
+  const sizepm  = parseFloat(document.getElementById('a-size')?.value)||0;
+  const startYear = parseInt(document.getElementById('a-start')?.value)||0;
+  const endYear   = parseInt(document.getElementById('a-end')?.value)||0;
+  const prev    = document.getElementById('cphm-preview');
+  const cphmDisplay = document.getElementById('a-cphm-display');
+  const cphm = (cores&&rt) ? Math.round(cores*rt) : 0;
+  if(cphmDisplay){
+    if(cphm>0){ cphmDisplay.textContent=cphm.toLocaleString()+' h'; cphmDisplay.style.color='#375623'; }
+    else { cphmDisplay.textContent='—'; cphmDisplay.style.color='#aaa'; }
+  }
+  if(!prev) return;
+  const totalYears=endYear-startYear+1;
+  const totalMonths=totalYears>0?totalYears*12:0;
+  if(totalMonths>0&&(cphm||sizepm)){
+    const totalCH=cphm?Math.round(cphm*totalMonths):null;
+    const totalST=sizepm?Math.round(sizepm*totalMonths):null;
+    prev.style.background='#f0f4ff'; prev.style.color='#1F3864';
+    prev.innerHTML=
+      `<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;color:#888">Simulation estimates — ${totalYears} yr / ${totalMonths} months</div>`+
+      (totalCH!=null?`<span style="font-weight:600">⚡ ${totalCH.toLocaleString()} core-hrs total</span><br>`:'')+
+      (totalST!=null?`<span style="font-weight:600">💾 ${totalST.toLocaleString()} GB total</span>`:'');
+  } else {
+    prev.style.background='#f4f6f9'; prev.style.color='#aaa';
+    prev.innerHTML='Enter Start year, End year, Cores and Run time 1month to see estimates';
+  }
+}
+
+document.addEventListener('input',function(e){
+  if(['a-cores','a-rt','a-size','a-start','a-end','a-actualstart'].includes(e.target.id)) updateCphmPreview();
+});
+
+function openEdit(filename,sha){
+  editingFile=filename;
+  editingSha=sha; // will be refreshed at save time via ghGet
+  const sim=allSims.find(s=>s._file===filename);
+  if(!sim){
+    showError('Simulation not found in cache — click 🔄 Reload and try again.');
+    return;
+  }
+  // Switch to form tab immediately — visible before any field population
+  showTab('form',document.getElementById('tab-btn-form'));
+  window.scrollTo(0,0);
+  const c=sim.compute||{},p=sim.period||{};
+  populateFormDropdowns();
+  setVal('a-project',sim.project);
+  setVal('a-experiment',sim.experiment);
+  // Set nesting type before populating LBC
+  const nesttype=sim.nesting_type||(sim.parent_sim_id?'intermediate':'direct');
+  setVal('a-nesttype', nesttype);
+  if(nesttype==='intermediate'){
+    updateNestingUI();
+    setTimeout(()=>setVal('a-parent', sim.parent_sim_id||''),0);
+  } else {
+    updateLbcList(sim.ic_lbc); // pass current value to preserve selection
+    updateNestingUI();
+  }
+  setVal('a-domain',sim.domain);
+  setVal('a-res',sim.spatial_resolution);
+  setVal('a-spinup',p.spin_up);setVal('a-start',p.start);setVal('a-end',p.end);
+  setVal('a-rcm',sim.rcm_model);
+  setVal('a-status',sim.status);
+  setVal('a-sc',c.supercomputer);
+  setVal('a-cores',c.cores);setVal('a-rt',c.run_time_1month_h||c.run_time_1yr_h);setVal('a-size',c.size_1month_gb);
+  setVal('a-path',sim.work_path);setVal('a-notes',sim.notes);
+  setVal('a-addedby',sim.added_by||ghUserName||'');
+  setVal('a-email',sim.contact_email||'');
+  setVal('a-deadline',sim.delivery_deadline||'');
+  setVal('a-taskdeadline',sim.task_deadline||'');
+  setVal('a-taskdeadline',sim.task_deadline||'');
+  setVal('a-actualstart',sim.actual_start_date||'');
+  setVal('a-mapurl',sim.domain_map_url||'');
+  autoFillDomainUrl();
+  updateCphmPreview();
+  // Trigger map preview
+  const mapPrev=document.getElementById('map-preview');
+  if(sim.domain_map_url){
+    mapPrev.innerHTML=`<img src="${sim.domain_map_url}" alt="Domain map"
+      style="max-width:100%;max-height:180px;border-radius:8px;border:1px solid #e5e7eb;margin-top:4px">`;
+  } else { mapPrev.innerHTML=''; }
+  document.getElementById('form-title').textContent='Edit simulation #'+sim.id;
+  document.getElementById('form-badge').textContent='EDIT';
+  document.getElementById('form-badge').className='mode-badge mode-edit';
+  document.getElementById('save-btn').textContent='💾 Save changes';
+  document.getElementById('form-msg').innerHTML='';
+  document.getElementById('tab-btn-form').textContent='✏️ Edit simulation';
+}
+
+function cancelForm(){
+  editingFile=null; editingSha=null;
+  document.getElementById('tab-btn-form').textContent='➕ Add simulation';
+  showTab('database',document.getElementById('tab-btn-database'));
+}
+
+async function saveSimulation(){
+  const token=getToken();
+  if(!token){
+    document.getElementById('form-msg').innerHTML='<div class="error">⚠️ GitHub token required. Enter it in the sidebar.</div>';
+    return;
+  }
+  // Validate required fields
+  const required=[
+    ['a-project','Project'],['a-experiment','Experiment'],['a-domain','Domain'],
+    ['a-status','Status'],['a-sc','Supercomputer'],
+    ['a-email','Contact email'],
+  ];
+  // IC/LBC required only for direct nesting
+  if((document.getElementById('a-nesttype')?.value||'direct')!=='intermediate'){
+    required.push(['a-lbc','IC/LBC']);
+  } else if(!document.getElementById('a-parent')?.value){
+    document.getElementById('form-msg').innerHTML=
+      '<div class="error">⚠️ Please select a <b>Parent simulation</b> for intermediate nesting.</div>';
+    return;
+  }
+  for(const [id,label] of required){
+    const val=document.getElementById(id).value;
+    if(!val||val===''||val==='—'){
+      document.getElementById('form-msg').innerHTML=
+        `<div class="error">⚠️ Please fill in the required field: <b>${label}</b></div>`;
+      return;
+    }
+  }
+  // Soft permission check before saving
+  if(editingFile){
+    const _existPerm=allSims.find(s=>s._file===editingFile);
+    if(_existPerm&&_existPerm.added_by&&ghUserName){
+      const ab=_existPerm.added_by.toLowerCase();
+      const cb=_existPerm.metadata?.created_by?.toLowerCase()||'';
+      const un=ghUserName.toLowerCase(), ul=ghUserLogin.toLowerCase();
+      if(ab!==un&&ab!==ul&&cb!==un&&cb!==ul){
+        document.getElementById('form-msg').innerHTML=
+          '<div class="error">⚠️ Permission denied: only <b>'+_existPerm.added_by+'</b> can edit this simulation.</div>';
+        return;
+      }
+    }
+  }
+  const btn=document.getElementById('save-btn');
+  btn.disabled=true; btn.textContent='Saving…';
+  const isEdit=!!editingFile;
+  const today=new Date().toISOString().split('T')[0];
+  const exp=document.getElementById('a-experiment').value;
+  const proj=document.getElementById('a-project').value;
+  const existingSim=isEdit?allSims.find(s=>s._file===editingFile):null;
+  const maxId=allSims.reduce((m,s)=>Math.max(m,parseInt(s.id)||0),0);
+  const nextId=isEdit?String(existingSim.id):String(maxId+1).padStart(3,'0');
+  const sim={
+    id:nextId,project:proj,experiment:exp,
+    domain:document.getElementById('a-domain').value,
+    spatial_resolution:document.getElementById('a-res').value,
+    period:{spin_up:parseInt(document.getElementById('a-spinup').value)||null,
+            start:parseInt(document.getElementById('a-start').value)||null,
+            end:parseInt(document.getElementById('a-end').value)||null},
+    rcm_model:document.getElementById('a-rcm').value,
+    nesting_type:document.getElementById('a-nesttype').value||'direct',
+    ic_lbc:(()=>{
+      const nt=document.getElementById('a-nesttype').value;
+      if(nt==='intermediate'){
+        const pid=document.getElementById('a-parent').value;
+        const psim=allSims.find(s=>s.id===pid);
+        return psim?`sim:${psim.id} — ${psim.experiment} ${psim.domain}`:null;
+      }
+      return document.getElementById('a-lbc').value||null;
+    })(),
+    parent_sim_id:document.getElementById('a-nesttype').value==='intermediate'
+      ?document.getElementById('a-parent').value||null:null,
+    status:document.getElementById('a-status').value,
+    compute:{supercomputer:document.getElementById('a-sc').value,
+             cores:parseInt(document.getElementById('a-cores').value)||null,
+             timestep_s:25,relaxation_zone_pts:23,
+             run_time_1month_h:parseFloat(document.getElementById('a-rt').value)||null,
+             output_frequency:'1 hr - 3 hr - 6 hr',
+             size_1month_gb:parseFloat(document.getElementById('a-size').value)||null},
+    actual_start_date:document.getElementById('a-actualstart').value||null,
+    work_path:document.getElementById('a-path').value,
+    notes:document.getElementById('a-notes').value,
+    added_by:ghUserName||ghUserLogin||document.getElementById('a-addedby').value||null,
+    contact_email:document.getElementById('a-email').value||null,
+    delivery_deadline:document.getElementById('a-deadline').value||null,
+    task_deadline:document.getElementById('a-taskdeadline').value||null,
+    task_deadline:document.getElementById('a-taskdeadline').value||null,
+    domain_map_url:(()=>{
+      const manual=document.getElementById('a-mapurl').value||'';
+      if(manual) return manual;
+      const domain=document.getElementById('a-domain').value;
+      return CORDEX_DOMAIN_URLS[domain]||null;
+    })(),
+    metadata:{
+      created_by:existingSim?.metadata?.created_by||ghUserLogin||ghUserName||'dashboard',
+      created_at:existingSim?.metadata?.created_at||today,
+      updated_at:today,
+      updated_by:ghUserLogin||ghUserName||null
+    }
+  };
+  // For edit: always use original filename. For add: build new slug.
+  const filePath=isEdit
+    ?`simulations/${editingFile}`
+    :`simulations/${nextId}_${proj.replace(/[^a-zA-Z0-9]/g,'_').slice(0,20)}_${exp.replace(/[^a-zA-Z0-9]/g,'_')}.yaml`;
+  const yamlStr=jsyaml.dump(sim,{lineWidth:-1});
+    const content=btoa(encodeURIComponent(yamlStr).replace(/%([0-9A-Fa-f]{2})/g,(_,p)=>String.fromCharCode(parseInt(p,16))));
+  const message=isEdit?`Update simulation ${nextId}: ${exp} — ${proj}`:`Add simulation ${nextId}: ${exp} — ${proj}`;
+  try{
+    const body={message,content,branch:BRANCH};
+    if(isEdit){
+      // Fetch fresh SHA right before write to avoid conflicts
+      try{
+        const fresh=await ghGet(`contents/${filePath}?ref=${BRANCH}`);
+        body.sha=fresh.sha;
+      }catch(_){ body.sha=editingSha; }
+    }
+    await ghPut(`contents/${filePath}`,body);
+    document.getElementById('form-msg').innerHTML=
+      `<div class="success">✅ Simulation #${nextId} ${isEdit?'updated':'added'} successfully! Reloading…</div>`;
+    setTimeout(()=>{
+      editingFile=null;editingSha=null;
+      document.getElementById('tab-btn-form').textContent='➕ Add simulation';
+      document.getElementById('form-msg').innerHTML='';
+      loadData();
+      showTab('database',document.getElementById('tab-btn-database'));
+    },1500);
+  }catch(e){
+    document.getElementById('form-msg').innerHTML=`<div class="error">⚠️ Error: ${e.message}</div>`;
+  }finally{btn.disabled=false;btn.textContent=isEdit?'💾 Save changes':'💾 Save';}
+}
+
+async function deleteSim(filename,sha,id){
+  if(!confirm(`Delete simulation #${id}?\nThis action cannot be undone.`))return;
+  const token=getToken();
+  if(!token){alert('GitHub token required in the sidebar.');return;}
+  // Soft permission check
+  const sim=allSims.find(s=>s._file===filename);
+  if(sim&&sim.added_by&&ghUserName){
+    const _a=sim.added_by.toLowerCase().replace(/\s/g,'');
+    const _c=(sim.metadata?.created_by||'').toLowerCase().replace(/\s/g,'');
+    const _n=ghUserName.toLowerCase().replace(/\s/g,'');
+    const _l=ghUserLogin.toLowerCase().replace(/\s/g,'');
+    if(_a!==_n&&_a!==_l&&_c!==_n&&_c!==_l){
+      alert('Permission denied: only '+sim.added_by+' can delete this simulation.');
+      return;
+    }
+  }
+  try{
+    // Optimistic UI update — remove from local array immediately
+    allSims=allSims.filter(s=>s._file!==filename);
+    applyFilters();
+    // Fetch fresh SHA before delete
+    let realSha=sha;
+    try{ const d=await ghGet(`contents/simulations/${filename}?ref=${BRANCH}`); realSha=d.sha; }catch(_){}
+    await ghDelete(`contents/simulations/${filename}`,realSha,`Delete simulation #${id}`);
+    await loadData(); // full reload confirms
+  }catch(e){
+    await loadData(); // restore on error
+    alert(`Error deleting: ${e.message}`);
+  }
+}
+
+function showTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  if(el)el.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+}
+function showError(msg){
+  document.getElementById('error-box').innerHTML=msg?`<div class="error">⚠️ ${msg}</div>`:'';
+}
+
+loadData();
+
+// ── Single delegated listener for table interactions ──────────────────────
+
+
+// Close modal on Escape
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    document.getElementById('sim-modal').classList.remove('open');
+    document.body.style.overflow='';
+  }
+});
+
+
+
+// Map preview
+document.addEventListener('input', function(e){
+  if(e.target.id==='a-mapurl'){
+    const url=e.target.value.trim();
+    const prev=document.getElementById('map-preview');
+    if(url){
+      prev.innerHTML=`<img src="${url}" alt="Domain map"
+        style="max-width:100%;max-height:180px;border-radius:8px;border:1px solid #e5e7eb;margin-top:4px"
+        onerror="this.style.display='none';document.getElementById('map-preview').innerHTML='<span style=\'color:#c00;font-size:11px\'>Image not accessible</span>'">`;
+    } else {
+      prev.innerHTML='';
+    }
+  }
+});
+
+
+</script>
+</body>
+</html>

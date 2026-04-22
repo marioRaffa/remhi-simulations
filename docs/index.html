@@ -489,6 +489,8 @@ function populateFilters(){
 
 function deadlinePriority(s){
   if(!s.delivery_deadline) return {cls:'deadline-none',label:'—',days:null};
+  // No coloring if simulation is already completed
+  if(s.status==='Completed') return {cls:'deadline-ok',label:s.delivery_deadline,days:0};
   const today=new Date(); today.setHours(0,0,0,0);
   const dl=new Date(s.delivery_deadline);
   const days=Math.round((dl-today)/(1000*60*60*24));
@@ -622,7 +624,7 @@ function renderTable(sims){
       
       <td style="white-space:nowrap">${(()=>{
         if(!s.task_deadline) return '<span style="color:#ccc;font-size:11px">—</span>';
-        const d=deadlinePriority({delivery_deadline:s.task_deadline});
+        const d=deadlinePriority({delivery_deadline:s.task_deadline,status:s.status});
         return '<span class="'+d.cls+'">'+d.label+'</span>';
       })()}</td>
       <td style="text-align:center" onclick="event.stopPropagation()">${s.work_path

@@ -618,12 +618,12 @@ function renderTable(sims){
         ?`<a href="mailto:${s.contact_email}" style="color:#1F3864;text-decoration:none"
              onclick="event.stopPropagation()">📧 ${s.contact_email}</a>`
         :'<span style="color:#ccc">—</span>'}</td>
-      <td style="white-space:nowrap">${(()=>{const d=deadlinePriority(s);return d.days===null?'<span class="deadline-none">—</span>':`<span class="${d.cls}">${d.label}</span>`;})()}</td>
+      <td style="white-space:nowrap">${(()=>{const d=deadlinePriority(s);return d.days===null?'<span class="deadline-none">—</span>':'<span class="'+d.cls+'">'+d.label+'</span>';})()}</td>
       
       <td style="white-space:nowrap">${(()=>{
         if(!s.task_deadline) return '<span style="color:#ccc;font-size:11px">—</span>';
         const d=deadlinePriority({delivery_deadline:s.task_deadline});
-        return `<span class="${d.cls}">${d.label}</span>`;
+        return '<span class="'+d.cls+'">'+d.label+'</span>';
       })()}</td>
       <td style="text-align:center" onclick="event.stopPropagation()">${s.work_path
         ?`<button onclick="navigator.clipboard.writeText('${s.work_path}').then(()=>{this.title='Copied!';setTimeout(()=>this.title='${s.work_path}',1500)})"
@@ -709,7 +709,7 @@ function openModal(s){
       ${fi('Actual start date (estimate)', s.actual_start_date)}
       ${fi('Expected completion (estimate)', s.delivery_deadline)}
       ${s.task_deadline?fi('📌 Task deadline', `<span class="${deadlinePriority({delivery_deadline:s.task_deadline}).cls}">${s.task_deadline}</span>`):''}
-      ${fi('Project deadline', s.task_deadline?`<span class="${(()=>{const d=new Date(s.task_deadline),t=new Date();const days=Math.round((d-t)/86400000);return days<0||days<=30?'deadline-urgent':days<=90?'deadline-soon':days<=180?'deadline-warn':'deadline-ok';})()"}">${s.task_deadline+(new Date(s.task_deadline)<new Date()?' ⚠️':'')}</span>`:null)}
+      
       ${sec('Compute')}
       ${fi('Supercomputer', c.supercomputer)}
       ${fi('Cores', c.cores)}
@@ -929,7 +929,6 @@ function openEdit(filename,sha){
   setVal('a-email',sim.contact_email||'');
   setVal('a-deadline',sim.delivery_deadline||'');
   setVal('a-taskdeadline',sim.task_deadline||'');
-  setVal('a-taskdeadline',sim.task_deadline||'');
   setVal('a-actualstart',sim.actual_start_date||'');
   setVal('a-mapurl',sim.domain_map_url||'');
   autoFillDomainUrl();
@@ -1038,7 +1037,6 @@ async function saveSimulation(){
     added_by:ghUserName||ghUserLogin||document.getElementById('a-addedby').value||null,
     contact_email:document.getElementById('a-email').value||null,
     delivery_deadline:document.getElementById('a-deadline').value||null,
-    task_deadline:document.getElementById('a-taskdeadline').value||null,
     task_deadline:document.getElementById('a-taskdeadline').value||null,
     domain_map_url:(()=>{
       const manual=document.getElementById('a-mapurl').value||'';

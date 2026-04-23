@@ -59,6 +59,7 @@ domain:
 rcm_model:
   - CCLM
   - ICLM
+  - WRF
 
 # IC/LBC for Evaluation experiment → reanalysis only
 ic_lbc_reanalysis:

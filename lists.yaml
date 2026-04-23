@@ -39,6 +39,7 @@ project:
 
 domain:
   - ITALY
+  - ITALY sub-domain
   - ALPS
   - FRANCE
   - EUR-CORDEX

@@ -3,6 +3,7 @@
 # ══════════════════════════════════════════════════════════════════
 
 experiment:
+  - NWP
   - Evaluation
   - Historical (CMIP6)
   - SSP1-2.6 (CMIP6)

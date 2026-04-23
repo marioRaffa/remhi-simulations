@@ -1,0 +1,46 @@
+id: '016'
+project: RISING
+experiment: Evaluation
+domain: ITALY
+spatial_resolution: 8km to 4 km
+period:
+  spin_up: null
+  start: null
+  end: null
+rcm_model: ICON_NWP
+nesting_type: intermediate
+ic_lbc: sim:001 — Evaluation EUR-CORDEX
+parent_sim_id: '001'
+status: Completed
+compute:
+  supercomputer: Cassandra
+  cores: 448
+  timestep_s: 25
+  relaxation_zone_pts: 23
+  run_time_1month_h: 27.27
+  output_frequency: 1 hr - 3 hr - 6 hr
+  size_1month_gb: 1900
+actual_start_date: '2026-04-22'
+work_path: /work/cmcc/oc02326/PROJECTS/ART/test_05_analysis_Europe_oneWayNest/OUTPUTS/MET_EUR_R5B7_NOAERO_NORAD_01_oneWayNest-Level1
+notes: |
+  This was done for testing One Way Nesting strategy in ICON, adopted for Europe R5B7 (8 km) -> Italy R5B8 (4 km)
+
+  Current run for meteorology only, yet to be adapted for ART
+
+  448 Cores
+  dtime = 15 seconds
+
+  Run time considers for 3 days of output as 9818 seconds using 448 cores. 2.727H for 3 days, so 27.27H for 1 month.
+
+  Output is produced hourly, and considers 3 days of output. 190 GB for 3 days, so about 1.9TB for 1 month.
+  (Size could be reduced if outputs are plotted every 2 or 3 hours only).
+added_by: olivercarlo
+contact_email: oliver.carlo@cmcc.it
+delivery_deadline: '2026-04-22'
+task_deadline: null
+domain_map_url: /data/cmcc/oc02326/GRID/EuropeR5B7_nested/
+metadata:
+  created_by: olivercarlo
+  created_at: '2026-04-23'
+  updated_at: '2026-04-23'
+  updated_by: olivercarlo

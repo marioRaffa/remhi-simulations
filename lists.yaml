@@ -3,7 +3,6 @@
 # ══════════════════════════════════════════════════════════════════
 
 experiment:
-  - NWP
   - Evaluation
   - Historical (CMIP6)
   - SSP1-2.6 (CMIP6)
@@ -69,6 +68,7 @@ rcm_model:
 # IC/LBC for Evaluation experiment → reanalysis only
 ic_lbc_reanalysis:
   - ERA5
+  - IFS
   - ERA-Interim
   - MERRA-2
   - JRA-55

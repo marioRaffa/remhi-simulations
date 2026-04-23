@@ -772,16 +772,29 @@ function populateFormDropdowns(){
 function updateLbcList(keepVal){
   if(!lists['ic_lbc_reanalysis'])return;
   const exp=document.getElementById('a-experiment').value;
-  const isEval=exp==='Evaluation';
   const isEmpty=!exp||exp==='';
-  const opts=isEmpty?[]:(isEval?(lists['ic_lbc_reanalysis']||[]):(lists['ic_lbc_gcm']||[]));
+  // Category logic:
+  // Evaluation, NWP-Analysis, NWP-Forecast → reanalysis/operational (ERA5, IFS, GFS…)
+  // Historical, SSP* → CMIP6 GCM
+  const isReanalysis=exp==='Evaluation'||exp==='NWP-Analysis'||exp==='NWP-Forecast';
+  const isGCM=!isEmpty&&!isReanalysis;
+  const opts=isEmpty?[]:(isReanalysis?(lists['ic_lbc_reanalysis']||[]):(lists['ic_lbc_gcm']||[]));
   const lbl=document.getElementById('a-lbc-label');
   const sel=document.getElementById('a-lbc');
   const hint=document.getElementById('a-lbc-hint');
-  lbl.textContent=isEmpty?'IC/LBC':(isEval?'IC/LBC — Reanalysis':'IC/LBC — CMIP6 GCM');
-  lbl.style.color=isEmpty?'#555':(isEval?'#1F6B75':'#4472C4');
-  sel.style.border=isEmpty?'1px solid #e5e7eb':`2px solid ${isEval?'#1F6B75':'#4472C4'}`;
-  hint.textContent=isEmpty?'Select an experiment first':(isEval?'Reanalysis only (Evaluation run)':'CMIP6 GCM forcing (Historical / SSP)');
+  if(isEmpty){
+    lbl.textContent='IC/LBC'; lbl.style.color='#555';
+    sel.style.border='1px solid #e5e7eb';
+    hint.textContent='Select an experiment first';
+  } else if(isReanalysis){
+    lbl.textContent='IC/LBC — Reanalysis / Operational'; lbl.style.color='#1F6B75';
+    sel.style.border='2px solid #1F6B75';
+    hint.textContent=exp==='Evaluation'?'Reanalysis only (Evaluation run)':'Reanalysis or operational analysis/forecast (NWP)';
+  } else {
+    lbl.textContent='IC/LBC — CMIP6 GCM'; lbl.style.color='#4472C4';
+    sel.style.border='2px solid #4472C4';
+    hint.textContent='CMIP6 GCM forcing (Historical / SSP)';
+  }
   const cur=keepVal||sel.value; sel.innerHTML='';
   const ph=document.createElement('option');ph.value='';ph.textContent='—';sel.appendChild(ph);
   opts.forEach(v=>{const o=document.createElement('option');o.value=o.textContent=v;if(v===cur)o.selected=true;sel.appendChild(o);});

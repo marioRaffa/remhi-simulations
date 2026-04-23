@@ -60,7 +60,7 @@ rcm_model:
   - CCLM
   - ICLM
   - WRF
-  - INCON_NWP
+  - ICON_NWP
   - ICON_NWP + ART
 
 # IC/LBC for Evaluation experiment → reanalysis only

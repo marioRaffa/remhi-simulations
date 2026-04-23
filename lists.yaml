@@ -14,6 +14,8 @@ experiment:
   - RCP4.5 (CMIP5)
   - RCP6.0 (CMIP5)
   - RCP8.5 (CMIP5)
+  - NWP-Analysis
+  - NWP-Forecast
 
 status:
   - Completed
@@ -68,11 +70,12 @@ rcm_model:
 # IC/LBC for Evaluation experiment → reanalysis only
 ic_lbc_reanalysis:
   - ERA5
-  - IFS
   - ERA-Interim
   - MERRA-2
   - JRA-55
   - CFSR
+  - IFS
+  - GFS
 
 # IC/LBC for Historical + SSP experiments → CMIP6 GCMs only
 ic_lbc_gcm:

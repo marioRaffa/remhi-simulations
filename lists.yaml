@@ -62,7 +62,7 @@ rcm_model:
   - WRF
   - ICON_NWP
   - ICON_NWP + ART
-  - ICON cpl (atm+oce)
+  - ICON_NWP_cpl (atm+oce)
 
 # IC/LBC for Evaluation experiment → reanalysis only
 ic_lbc_reanalysis:

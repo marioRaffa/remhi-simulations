@@ -11,7 +11,7 @@ rcm_model: ICLM
 nesting_type: direct
 ic_lbc: ERA5
 parent_sim_id: null
-status: Ongoing
+status: Completed
 compute:
   supercomputer: Cassandra
   cores: 2016
@@ -25,10 +25,11 @@ work_path: /work/cmcc/ac06322/ICON/ICON_clm/spice-v2.2/chain/gcm2icon/IT2km_new
 notes: ''
 added_by: AngeloCampanale
 contact_email: angelo.campanale@cmcc.it
-delivery_deadline: '2026-04-10'
+delivery_deadline: '2026-04-27'
+task_deadline: null
 domain_map_url: https://www.sciencedirect.com/science/article/pii/S0169809525004314
 metadata:
   created_by: AngeloCampanaleCMCC
   created_at: '2026-04-10'
-  updated_at: '2026-04-10'
+  updated_at: '2026-05-07'
   updated_by: AngeloCampanaleCMCC

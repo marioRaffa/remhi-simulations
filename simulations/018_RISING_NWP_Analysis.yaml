@@ -22,7 +22,7 @@ compute:
   size_1month_gb: 1230
 actual_start_date: null
 work_path: /work/cmcc/oc02326/PROJECTS/ART/test_08_analysis_ItalyR5B9/OUTPUTS/ART_ITA_R5B9_DustSeas_RAD_02_DOM01_1month/
-notes: 'ICON-ART simulation with Dust and Seasalt. Italy R5B9, 2 km resolution. dtime = 20 seconds. '
+notes: ICON-ART simulation with Dust and SeaSalt Only. Italy R5B9, 2 km resolution. dtime = 20 seconds. Output size 1230 GB. Preprocessed outputs from IFS = 130 GB
 added_by: olivercarlo
 contact_email: oliver.carlo@cmcc.it
 delivery_deadline: '2026-08-06'

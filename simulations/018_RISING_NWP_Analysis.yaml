@@ -1,0 +1,35 @@
+id: '018'
+project: RISING
+experiment: NWP-Analysis
+domain: ITALY
+spatial_resolution: 2 km
+period:
+  spin_up: null
+  start: 2023
+  end: 2023
+rcm_model: ICON_NWP + ART
+nesting_type: direct
+ic_lbc: IFS
+parent_sim_id: null
+status: Completed
+compute:
+  supercomputer: Cassandra
+  cores: 896
+  timestep_s: 25
+  relaxation_zone_pts: 23
+  run_time_1month_h: 20
+  output_frequency: 1 hr - 3 hr - 6 hr
+  size_1month_gb: 1230
+actual_start_date: null
+work_path: /work/cmcc/oc02326/PROJECTS/ART/test_08_analysis_ItalyR5B9/OUTPUTS/ART_ITA_R5B9_DustSeas_RAD_02_DOM01_1month/
+notes: 'ICON-ART simulation with Dust and Seasalt. Italy R5B9, 2 km resolution. dtime = 20 seconds. '
+added_by: olivercarlo
+contact_email: oliver.carlo@cmcc.it
+delivery_deadline: null
+task_deadline: null
+domain_map_url: null
+metadata:
+  created_by: olivercarlo
+  created_at: '2026-09-01'
+  updated_at: '2026-09-01'
+  updated_by: olivercarlo

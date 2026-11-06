@@ -6,7 +6,7 @@ spatial_resolution: 0.0275° - 3 Km
 period:
   spin_up: 1999
   start: 2000
-  end: 1995
+  end: 2010
 rcm_model: ICLM
 nesting_type: intermediate
 ic_lbc: sim:005 — Evaluation EUR-CORDEX

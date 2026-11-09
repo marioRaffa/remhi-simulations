@@ -1,0 +1,35 @@
+id: '020'
+project: HYRAD4CC
+experiment: Reanalysis
+domain: ITALY
+spatial_resolution: 9 km
+period:
+  spin_up: 2017
+  start: 2018
+  end: 2025
+rcm_model: WRF
+nesting_type: direct
+ic_lbc: ERA5
+parent_sim_id: null
+status: Ongoing
+compute:
+  supercomputer: Cassandra
+  cores: 256
+  timestep_s: 25
+  relaxation_zone_pts: 23
+  run_time_1month_h: 4.5
+  output_frequency: 1 hr - 3 hr - 6 hr
+  size_1month_gb: 653
+actual_start_date: '2025-09-07'
+work_path: /work/cmcc/of01325/reanalysis_radarmeteo/cont/chucks/
+notes: WRF (no DA) parent domain for 1.8 km simulation with DA
+added_by: Ilenia
+contact_email: ilenia.manco@cmcc.it
+delivery_deadline: '2027-02-15'
+task_deadline: '2027-02-16'
+domain_map_url: null
+metadata:
+  created_by: ileniam
+  created_at: '2026-11-09'
+  updated_at: '2026-11-09'
+  updated_by: ileniam

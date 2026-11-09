@@ -776,7 +776,7 @@ function updateLbcList(keepVal){
   // Category logic:
   // Evaluation, NWP-Analysis, NWP-Forecast → reanalysis/operational (ERA5, IFS, GFS…)
   // Historical, SSP* → CMIP6 GCM
-  const isReanalysis=exp==='Evaluation'||exp==='NWP-Analysis'||exp==='NWP-Forecast';
+  const isReanalysis=['Evaluation','Reanalysis','NWP-Analysis','NWP-Forecast'].includes(exp);
   const isGCM=!isEmpty&&!isReanalysis;
   const opts=isEmpty?[]:(isReanalysis?(lists['ic_lbc_reanalysis']||[]):(lists['ic_lbc_gcm']||[]));
   const lbl=document.getElementById('a-lbc-label');
@@ -789,8 +789,7 @@ function updateLbcList(keepVal){
   } else if(isReanalysis){
     lbl.textContent='IC/LBC — Reanalysis / Operational'; lbl.style.color='#1F6B75';
     sel.style.border='2px solid #1F6B75';
-    hint.textContent=exp==='Evaluation'?'Reanalysis only (Evaluation run)':'Reanalysis or operational analysis/forecast (NWP)';
-  } else {
+    hint.textContent=(exp==='Evaluation'||exp==='Reanalysis')?'Reanalysis only ('+exp+' run)':'Reanalysis or operational analysis/forecast (NWP)';  } else {
     lbl.textContent='IC/LBC — CMIP6 GCM'; lbl.style.color='#4472C4';
     sel.style.border='2px solid #4472C4';
     hint.textContent='CMIP6 GCM forcing (Historical / SSP)';

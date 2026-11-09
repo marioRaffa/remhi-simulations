@@ -9,8 +9,8 @@ period:
   end: 2025
 rcm_model: WRF
 nesting_type: intermediate
-ic_lbc: sim:012 — Evaluation ITALY
-parent_sim_id: '012'
+ic_lbc: sim:020 — Reanalysis ITALY
+parent_sim_id: '020'
 status: Ongoing
 compute:
   supercomputer: Cassandra
